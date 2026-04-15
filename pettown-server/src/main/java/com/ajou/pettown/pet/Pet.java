@@ -30,11 +30,13 @@ public class Pet {
     public static PetBuilder builder() { return new PetBuilder(); }
 
     public Long getPetId() { return petId; }
-    public User getUser() { return user; }
     public Integer getPetTypeId() { return petTypeId; }
     public Integer getLevel() { return level; }
     public Integer getFood() { return food; }
     public Integer getWater() { return water; }
+
+    // userId만 노출
+    public Long getUserId() { return user.getId(); }
 
     public static class PetBuilder {
         private User user;

@@ -1,6 +1,7 @@
 package com.ajou.pettown.auth;
 
 import com.ajou.pettown.auth.dto.LoginRequest;
+import com.ajou.pettown.auth.dto.LoginResponse;
 import com.ajou.pettown.auth.dto.RegisterRequest;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -49,7 +50,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public String login(LoginRequest request) {
+    public LoginResponse login(LoginRequest request) {
         User user = userRepository.findByUserId(request.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found."));
 
@@ -58,11 +59,14 @@ public class AuthServiceImpl implements AuthService {
         }
 
         System.out.println("Token generation secret: " + jwtSecret);
-        return Jwts.builder()
+
+        String token = Jwts.builder()
                 .subject(user.getUserId())
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + jwtExpiration))
                 .signWith(Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8)))
                 .compact();
+
+        return new LoginResponse(token, user.getNickname(), user.getShopName());
     }
 }
