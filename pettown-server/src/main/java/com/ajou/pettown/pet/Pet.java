@@ -35,9 +35,6 @@ public class Pet {
     public Integer getFood() { return food; }
     public Integer getWater() { return water; }
 
-    // userId만 노출
-    public Long getUserId() { return user.getId(); }
-
     public static class PetBuilder {
         private User user;
         private Integer petTypeId;
