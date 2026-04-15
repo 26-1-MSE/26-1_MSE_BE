@@ -36,7 +36,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public void register(RegisterRequest request) {
         if (checkUserIdDuplicate(request.getUserId())) {
-            throw new RuntimeException("이미 사용중인 아이디입니다.");
+            throw new RuntimeException("ID_ALREADY_EXISTS");
         }
 
         User user = User.builder()
