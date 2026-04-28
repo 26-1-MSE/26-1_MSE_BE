@@ -3,7 +3,6 @@ package com.ajou.pettown.pet;
 import com.ajou.pettown.auth.User;
 import com.ajou.pettown.auth.UserRepository;
 import com.ajou.pettown.pet.dto.PetAcquireResponse;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -44,7 +43,7 @@ public class PetServiceImpl implements PetService {
         return new PetAcquireResponse(
                 true,
                 new PetAcquireResponse.PetInfo(pet.getPetId(), pet.getPetTypeId(), pet.getLevel()),
-                user.getUserId(), // User에 getUserId() 있어야 함
+                user.getUserId(),
                 count + 1);
     }
 }

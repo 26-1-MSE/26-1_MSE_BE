@@ -1,7 +1,9 @@
 package com.ajou.pettown.common.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import lombok.Getter;
 
+@Getter
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ApiResponse<T> {
     private boolean success;
@@ -21,8 +23,4 @@ public class ApiResponse<T> {
     public static <T> ApiResponse<T> fail(String error) {
         return new ApiResponse<>(false, null, error);
     }
-
-    public boolean isSuccess() { return success; }
-    public T getData() { return data; }
-    public String getError() { return error; }
 }

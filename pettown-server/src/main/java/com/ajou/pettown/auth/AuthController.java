@@ -4,11 +4,9 @@ import com.ajou.pettown.auth.dto.LoginRequest;
 import com.ajou.pettown.auth.dto.LoginResponse;
 import com.ajou.pettown.auth.dto.RegisterRequest;
 import com.ajou.pettown.common.dto.ApiResponse;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import com.ajou.pettown.auth.dto.LoginResponse;
 
 @RestController
 @RequestMapping("/auth")
@@ -17,14 +15,12 @@ public class AuthController {
     @Autowired
     private AuthService authService;
 
-    // 아이디 중복 체크
     @GetMapping("/check/{userId}")
     public ResponseEntity<Boolean> checkDuplicate(@PathVariable String userId) {
         boolean isDuplicate = authService.checkUserIdDuplicate(userId);
         return ResponseEntity.ok(isDuplicate);
     }
 
-    // 회원가입
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
         try {
@@ -35,7 +31,6 @@ public class AuthController {
         }
     }
 
-    // 로그인
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.login(request));

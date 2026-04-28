@@ -3,7 +3,6 @@ package com.ajou.pettown.pet;
 import com.ajou.pettown.common.dto.ApiResponse;
 import com.ajou.pettown.pet.dto.PetAcquireRequest;
 import com.ajou.pettown.pet.dto.PetAcquireResponse;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
