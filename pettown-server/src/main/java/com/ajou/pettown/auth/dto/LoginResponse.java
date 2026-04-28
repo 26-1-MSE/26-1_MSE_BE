@@ -9,4 +9,5 @@ public class LoginResponse {
     private String accessToken;
     private String nickname;
     private String shopName;
+    private boolean hasUnreadMail;
 }

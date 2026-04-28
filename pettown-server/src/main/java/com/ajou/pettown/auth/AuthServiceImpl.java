@@ -67,6 +67,7 @@ public class AuthServiceImpl implements AuthService {
                 .signWith(Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8)))
                 .compact();
 
-        return new LoginResponse(token, user.getNickname(), user.getShopName());
+        // hasUnreadMail: 편지 시스템 구현 전 임시 false
+        return new LoginResponse(token, user.getNickname(), user.getShopName(), false);
     }
 }
