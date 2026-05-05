@@ -26,4 +26,7 @@ public class Item {
     @Builder.Default
     @Column(nullable = false)
     private Integer count = 0;
+
+    public void addCount(int amount) { this.count += amount; }
+    public void useOne() { this.count--; }
 }

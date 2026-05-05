@@ -34,4 +34,8 @@ public class Pet {
     @Builder.Default
     @Column(nullable = false)
     private Integer water = 0;
+
+    public void feedFood() { this.food++; }
+    public void drinkWater() { this.water++; }
+    public void levelUp() { this.level++; this.food = 0; this.water = 0; }
 }

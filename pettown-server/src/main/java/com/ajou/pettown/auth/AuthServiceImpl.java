@@ -3,6 +3,7 @@ package com.ajou.pettown.auth;
 import com.ajou.pettown.auth.dto.LoginRequest;
 import com.ajou.pettown.auth.dto.LoginResponse;
 import com.ajou.pettown.auth.dto.RegisterRequest;
+import com.ajou.pettown.pet.PetRepository;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,12 +13,17 @@ import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class AuthServiceImpl implements AuthService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private PetRepository petRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -67,7 +73,12 @@ public class AuthServiceImpl implements AuthService {
                 .signWith(Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8)))
                 .compact();
 
+        List<LoginResponse.OwnedPet> ownedPets = petRepository.findByUser_IdOrderByPetIdAsc(user.getId())
+                .stream()
+                .map(pet -> new LoginResponse.OwnedPet(pet.getPetId(), pet.getPetTypeId()))
+                .collect(Collectors.toList());
+
         // hasUnreadMail: 편지 시스템 구현 전 임시 false
-        return new LoginResponse(token, user.getNickname(), user.getShopName(), false);
+        return new LoginResponse(token, user.getNickname(), user.getShopName(), false, ownedPets);
     }
 }

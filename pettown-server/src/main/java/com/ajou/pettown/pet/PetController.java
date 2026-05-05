@@ -3,6 +3,7 @@ package com.ajou.pettown.pet;
 import com.ajou.pettown.common.dto.ApiResponse;
 import com.ajou.pettown.pet.dto.PetAcquireRequest;
 import com.ajou.pettown.pet.dto.PetAcquireResponse;
+import com.ajou.pettown.pet.dto.PetRoomResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,6 +16,17 @@ public class PetController {
 
     @Autowired
     private PetService petService;
+
+    @GetMapping("/petroom")
+    public ResponseEntity<ApiResponse<PetRoomResponse>> getPetRoom(
+            @RequestAttribute("userId") String userId,
+            @RequestParam Long petId) {
+        try {
+            return ResponseEntity.ok(ApiResponse.ok(petService.getPetRoom(userId, petId)));
+        } catch (RuntimeException e) {
+            return ResponseEntity.ok(ApiResponse.fail(e.getMessage()));
+        }
+    }
 
     @GetMapping("/list")
     public ResponseEntity<ApiResponse<List<Pet>>> getPets(
