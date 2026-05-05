@@ -3,6 +3,7 @@ package com.ajou.pettown.auth;
 import com.ajou.pettown.auth.dto.LoginRequest;
 import com.ajou.pettown.auth.dto.LoginResponse;
 import com.ajou.pettown.auth.dto.RegisterRequest;
+import com.ajou.pettown.mail.MailRepository;
 import com.ajou.pettown.pet.PetRepository;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -24,6 +25,9 @@ public class AuthServiceImpl implements AuthService {
 
     @Autowired
     private PetRepository petRepository;
+
+    @Autowired
+    private MailRepository mailRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -78,7 +82,7 @@ public class AuthServiceImpl implements AuthService {
                 .map(pet -> new LoginResponse.OwnedPet(pet.getPetId(), pet.getPetTypeId()))
                 .collect(Collectors.toList());
 
-        // hasUnreadMail: 편지 시스템 구현 전 임시 false
-        return new LoginResponse(token, user.getNickname(), user.getShopName(), false, ownedPets);
+        boolean hasUnreadMail = mailRepository.existsByUser_IdAndIsRead(user.getId(), false);
+        return new LoginResponse(token, user.getNickname(), user.getShopName(), hasUnreadMail, ownedPets);
     }
 }
