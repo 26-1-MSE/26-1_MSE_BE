@@ -2,6 +2,7 @@ package com.ajou.pettown.pet;
 
 import com.ajou.pettown.auth.User;
 import com.ajou.pettown.auth.UserRepository;
+import com.ajou.pettown.auth.dto.LoginResponse;
 import com.ajou.pettown.item.ItemRepository;
 import com.ajou.pettown.pet.dto.PetAcquireResponse;
 import com.ajou.pettown.pet.dto.PetRoomResponse;
@@ -25,10 +26,13 @@ public class PetServiceImpl implements PetService {
     private ItemRepository itemRepository;
 
     @Override
-    public List<Pet> getPets(String userId) {
+    public List<LoginResponse.OwnedPet> getPets(String userId) {
         User user = userRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("존재하지 않는 유저입니다."));
-        return petRepository.findByUser_IdOrderByPetIdAsc(user.getId());
+        return petRepository.findByUser_IdOrderByPetIdAsc(user.getId())
+                .stream()
+                .map(pet -> new LoginResponse.OwnedPet(pet.getPetId(), pet.getPetTypeId()))
+                .collect(Collectors.toList());
     }
 
     @Override

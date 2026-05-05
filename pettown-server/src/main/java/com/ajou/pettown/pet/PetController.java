@@ -1,5 +1,6 @@
 package com.ajou.pettown.pet;
 
+import com.ajou.pettown.auth.dto.LoginResponse;
 import com.ajou.pettown.common.dto.ApiResponse;
 import com.ajou.pettown.pet.dto.PetAcquireRequest;
 import com.ajou.pettown.pet.dto.PetAcquireResponse;
@@ -9,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/pet")
@@ -29,9 +31,9 @@ public class PetController {
     }
 
     @GetMapping("/list")
-    public ResponseEntity<ApiResponse<List<Pet>>> getPets(
+    public ResponseEntity<Map<String, List<LoginResponse.OwnedPet>>> getPets(
             @RequestAttribute("userId") String userId) {
-        return ResponseEntity.ok(ApiResponse.ok(petService.getPets(userId)));
+        return ResponseEntity.ok(Map.of("ownedPets", petService.getPets(userId)));
     }
 
     @PostMapping("/acquire")
