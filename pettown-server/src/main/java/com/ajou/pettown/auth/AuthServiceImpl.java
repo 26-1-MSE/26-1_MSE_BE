@@ -1,5 +1,6 @@
 package com.ajou.pettown.auth;
 
+// Implementation of AuthService handling registration, login, and JWT issuance.
 import com.ajou.pettown.auth.dto.LoginRequest;
 import com.ajou.pettown.auth.dto.LoginResponse;
 import com.ajou.pettown.auth.dto.RegisterRequest;
@@ -49,6 +50,7 @@ public class AuthServiceImpl implements AuthService {
             throw new RuntimeException("ID_ALREADY_EXISTS");
         }
 
+        // Encode password with BCrypt before persisting
         User user = User.builder()
                 .userId(request.getUserId())
                 .password(passwordEncoder.encode(request.getPassword()))
@@ -68,11 +70,13 @@ public class AuthServiceImpl implements AuthService {
             throw new RuntimeException("Invalid password.");
         }
 
+        // Record the time of this login for admin visibility
         user.updateLastActiveAt();
         userRepository.save(user);
 
         System.out.println("Token generation secret: " + jwtSecret);
 
+        // Issue a signed JWT valid for the configured expiration period
         String token = Jwts.builder()
                 .subject(user.getUserId())
                 .issuedAt(new Date())
@@ -80,6 +84,7 @@ public class AuthServiceImpl implements AuthService {
                 .signWith(Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8)))
                 .compact();
 
+        // Collect all pets owned by this user
         List<LoginResponse.OwnedPet> ownedPets = petRepository.findByUser_IdOrderByPetIdAsc(user.getId())
                 .stream()
                 .map(pet -> new LoginResponse.OwnedPet(pet.getPetId(), pet.getPetTypeId()))

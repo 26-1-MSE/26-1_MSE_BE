@@ -1,5 +1,6 @@
 package com.ajou.pettown.mail.dto;
 
+// Response containing a list of mail summaries (without full content).
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 

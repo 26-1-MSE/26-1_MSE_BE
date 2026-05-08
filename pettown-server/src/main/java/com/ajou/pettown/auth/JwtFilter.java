@@ -1,5 +1,6 @@
 package com.ajou.pettown.auth;
 
+// Servlet filter that validates the JWT Bearer token on every API request.
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -30,6 +31,7 @@ public class JwtFilter extends OncePerRequestFilter {
 
         String path = request.getRequestURI();
 
+        // Skip JWT validation for auth and admin routes (handled separately)
         if (path.startsWith("/auth") || path.startsWith("/admin")) {
             filterChain.doFilter(request, response);
             return;
@@ -53,8 +55,10 @@ public class JwtFilter extends OncePerRequestFilter {
                     .getPayload();
 
             String userId = claims.getSubject();
+            // Expose userId as a request attribute for downstream controllers
             request.setAttribute("userId", userId);
 
+            // Register the authenticated principal in the Security context
             UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(userId, null, List.of());
             SecurityContextHolder.getContext().setAuthentication(authentication);

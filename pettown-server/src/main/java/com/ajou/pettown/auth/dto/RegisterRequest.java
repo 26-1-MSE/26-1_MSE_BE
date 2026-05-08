@@ -1,5 +1,6 @@
 package com.ajou.pettown.auth.dto;
 
+// Request body for the registration endpoint.
 import lombok.Getter;
 import lombok.Setter;
 

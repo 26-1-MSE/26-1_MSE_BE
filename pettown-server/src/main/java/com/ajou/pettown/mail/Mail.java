@@ -1,5 +1,6 @@
 package com.ajou.pettown.mail;
 
+// Entity representing an in-game mail message sent to a user.
 import com.ajou.pettown.auth.User;
 import jakarta.persistence.*;
 import lombok.*;
@@ -38,7 +39,7 @@ public class Mail {
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
-    private LocalDateTime createdAt;
+    private LocalDateTime createdAt; // auto-set by Hibernate on insert
 
     public void markAsRead() { this.isRead = true; }
 }

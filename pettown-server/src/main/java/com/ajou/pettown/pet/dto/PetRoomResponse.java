@@ -1,5 +1,6 @@
 package com.ajou.pettown.pet.dto;
 
+// Response for the pet room screen, containing the pet's current state and the user's usable items.
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -9,7 +10,7 @@ import java.util.List;
 @AllArgsConstructor
 public class PetRoomResponse {
     private PetInfo pet;
-    private List<ItemInfo> items;
+    private List<ItemInfo> items; // items with count > 0 that can be used on this pet
 
     @Getter
     @AllArgsConstructor
@@ -21,6 +22,7 @@ public class PetRoomResponse {
         private Stat water;
     }
 
+    // Current and maximum value for a pet stat (food or water)
     @Getter
     @AllArgsConstructor
     public static class Stat {

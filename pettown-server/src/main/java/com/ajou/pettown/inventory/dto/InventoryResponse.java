@@ -1,5 +1,6 @@
 package com.ajou.pettown.inventory.dto;
 
+// Response containing the user's full list of pets and items.
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -11,6 +12,7 @@ public class InventoryResponse {
     private List<PetInfo> pets;
     private List<ItemInfo> items;
 
+    // Pet snapshot including current food/water stats
     @Getter
     @AllArgsConstructor
     public static class PetInfo {
@@ -21,6 +23,7 @@ public class InventoryResponse {
         private Integer water;
     }
 
+    // Item snapshot with remaining count
     @Getter
     @AllArgsConstructor
     public static class ItemInfo {

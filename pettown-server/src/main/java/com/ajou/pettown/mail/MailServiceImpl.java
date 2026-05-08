@@ -1,5 +1,6 @@
 package com.ajou.pettown.mail;
 
+// Implementation of MailService with ownership validation and read-status update.
 import com.ajou.pettown.auth.User;
 import com.ajou.pettown.auth.UserRepository;
 import com.ajou.pettown.mail.dto.MailDetailResponse;
@@ -28,6 +29,7 @@ public class MailServiceImpl implements MailService {
         User user = userRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("존재하지 않는 유저입니다."));
 
+        // Fetch mails ordered by newest first and map to list items
         List<MailListResponse.MailItem> mails = mailRepository.findByUser_IdOrderByCreatedAtDesc(user.getId())
                 .stream()
                 .map(mail -> new MailListResponse.MailItem(
@@ -50,11 +52,12 @@ public class MailServiceImpl implements MailService {
         Mail mail = mailRepository.findById(mailId)
                 .orElseThrow(() -> new RuntimeException("존재하지 않는 우편입니다."));
 
+        // Prevent users from reading mail that belongs to someone else
         if (!mail.getUser().getId().equals(user.getId())) {
             throw new RuntimeException("본인의 우편이 아닙니다.");
         }
 
-        mail.markAsRead();
+        mail.markAsRead(); // persisted via @Transactional dirty checking
 
         return new MailDetailResponse(
                 mail.getMailId(),

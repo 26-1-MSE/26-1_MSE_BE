@@ -1,5 +1,6 @@
 package com.ajou.pettown.auth;
 
+// Spring Security configuration with two separate filter chains: admin (session) and API (JWT).
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -30,6 +31,7 @@ public class SecurityConfig {
     @Autowired
     private JwtFilter jwtFilter;
 
+    // Admin credentials loaded from application.properties (defaults provided)
     @Value("${admin.username:admin}")
     private String adminUsername;
 
@@ -41,6 +43,7 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
+    // In-memory user store holding the single admin account
     @Bean
     public UserDetailsService adminUserDetailsService() {
         UserDetails admin = org.springframework.security.core.userdetails.User
@@ -51,6 +54,7 @@ public class SecurityConfig {
         return new InMemoryUserDetailsManager(admin);
     }
 
+    // Explicit AuthenticationManager wiring PasswordEncoder + UserDetailsService for the admin chain
     @Bean
     public AuthenticationManager adminAuthenticationManager() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
@@ -59,6 +63,8 @@ public class SecurityConfig {
         return new ProviderManager(provider);
     }
 
+    // Prevent Spring Boot from auto-registering JwtFilter as a global servlet filter;
+    // it must only run inside apiFilterChain where it is explicitly added.
     @Bean
     public FilterRegistrationBean<JwtFilter> jwtFilterRegistration(JwtFilter filter) {
         FilterRegistrationBean<JwtFilter> registration = new FilterRegistrationBean<>(filter);
@@ -66,6 +72,7 @@ public class SecurityConfig {
         return registration;
     }
 
+    // Chain 1 (higher priority): session-based form login for the /admin web UI
     @Bean
     @Order(1)
     public SecurityFilterChain adminFilterChain(HttpSecurity http) throws Exception {
@@ -93,6 +100,7 @@ public class SecurityConfig {
         return http.build();
     }
 
+    // Chain 2: stateless JWT authentication for all game API endpoints
     @Bean
     @Order(2)
     public SecurityFilterChain apiFilterChain(HttpSecurity http) throws Exception {

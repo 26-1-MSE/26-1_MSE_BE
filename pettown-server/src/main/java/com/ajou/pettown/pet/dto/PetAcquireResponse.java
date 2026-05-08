@@ -1,5 +1,6 @@
 package com.ajou.pettown.pet.dto;
 
+// Response returned after a pet is successfully acquired, including updated ownership count.
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -8,7 +9,7 @@ public class PetAcquireResponse {
     private boolean success;
     private PetInfo pet;
     private String userId;
-    private int totalPetCount;
+    private int totalPetCount; // total number of pets the user now owns
 
     public PetAcquireResponse(boolean success, PetInfo pet, String userId, int totalPetCount) {
         this.success = success;

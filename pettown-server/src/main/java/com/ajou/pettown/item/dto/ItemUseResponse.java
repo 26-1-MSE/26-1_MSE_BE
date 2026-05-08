@@ -1,5 +1,6 @@
 package com.ajou.pettown.item.dto;
 
+// Response returned after using an item, reflecting the pet's updated stats and level.
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -18,11 +19,11 @@ public class ItemUseResponse {
         private Stat water;
     }
 
+    // Current and maximum value for a pet stat (food or water)
     @Getter
     @AllArgsConstructor
     public static class Stat {
         private Integer current;
         private Integer max;
     }
-
 }

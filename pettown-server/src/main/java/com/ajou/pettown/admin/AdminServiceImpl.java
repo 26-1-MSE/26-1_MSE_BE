@@ -1,5 +1,6 @@
 package com.ajou.pettown.admin;
 
+// Implementation of AdminService providing user listing, search, and deletion.
 import com.ajou.pettown.admin.dto.AdminUserDto;
 import com.ajou.pettown.auth.User;
 import com.ajou.pettown.auth.UserRepository;
@@ -35,6 +36,7 @@ public class AdminServiceImpl implements AdminService {
                         u.getNickname(),
                         u.getShopName(),
                         petRepository.countByUser_Id(u.getId()),
+                        // Sum counts across all item types (not number of types)
                         itemRepository.findByUser_Id(u.getId()).stream().mapToInt(item -> item.getCount()).sum(),
                         mailRepository.findByUser_IdOrderByCreatedAtDesc(u.getId()).size(),
                         u.getLastActiveAt()
@@ -45,6 +47,7 @@ public class AdminServiceImpl implements AdminService {
     @Override
     @Transactional
     public void deleteUser(Long userId) {
+        // Delete child records first to satisfy foreign key constraints
         mailRepository.deleteByUser_Id(userId);
         itemRepository.deleteByUser_Id(userId);
         petRepository.deleteByUser_Id(userId);
@@ -54,6 +57,7 @@ public class AdminServiceImpl implements AdminService {
     @Override
     @Transactional
     public void deleteAllUsers() {
+        // Order matters: child tables must be cleared before the users table
         mailRepository.deleteAll();
         itemRepository.deleteAll();
         petRepository.deleteAll();

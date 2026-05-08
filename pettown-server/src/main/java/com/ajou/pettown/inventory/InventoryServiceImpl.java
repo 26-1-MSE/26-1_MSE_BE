@@ -1,5 +1,6 @@
 package com.ajou.pettown.inventory;
 
+// Implementation of InventoryService that aggregates pet and item data for a user.
 import com.ajou.pettown.auth.User;
 import com.ajou.pettown.auth.UserRepository;
 import com.ajou.pettown.inventory.dto.InventoryResponse;
@@ -28,12 +29,14 @@ public class InventoryServiceImpl implements InventoryService {
         User user = userRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("존재하지 않는 유저입니다."));
 
+        // Map pets preserving order by petId
         List<InventoryResponse.PetInfo> pets = petRepository.findByUser_IdOrderByPetIdAsc(user.getId())
                 .stream()
                 .map(pet -> new InventoryResponse.PetInfo(
                         pet.getPetId(), pet.getPetTypeId(), pet.getLevel(), pet.getFood(), pet.getWater()))
                 .collect(Collectors.toList());
 
+        // Exclude items with zero count from the response
         List<InventoryResponse.ItemInfo> items = itemRepository.findByUser_Id(user.getId())
                 .stream()
                 .filter(item -> item.getCount() > 0)

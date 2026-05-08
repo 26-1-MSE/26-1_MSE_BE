@@ -1,5 +1,6 @@
 package com.ajou.pettown.item;
 
+// Service interface for item acquisition and usage.
 import com.ajou.pettown.item.dto.ItemAcquireResponse;
 import com.ajou.pettown.item.dto.ItemUseResponse;
 

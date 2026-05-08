@@ -1,5 +1,6 @@
 package com.ajou.pettown.pet;
 
+// Entity representing a pet owned by a user, with level and stat tracking.
 import com.ajou.pettown.auth.User;
 import jakarta.persistence.*;
 import lombok.*;
@@ -37,5 +38,7 @@ public class Pet {
 
     public void feedFood() { this.food++; }
     public void drinkWater() { this.water++; }
+
+    // Level up resets food and water to 0 for the next level's requirements
     public void levelUp() { this.level++; this.food = 0; this.water = 0; }
 }

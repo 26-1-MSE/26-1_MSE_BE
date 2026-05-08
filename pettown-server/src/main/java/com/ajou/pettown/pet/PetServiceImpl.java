@@ -1,5 +1,6 @@
 package com.ajou.pettown.pet;
 
+// Implementation of PetService with ownership validation and level-based stat cap calculation.
 import com.ajou.pettown.auth.User;
 import com.ajou.pettown.auth.UserRepository;
 import com.ajou.pettown.auth.dto.LoginResponse;
@@ -14,7 +15,6 @@ import java.util.stream.Collectors;
 
 @Service
 public class PetServiceImpl implements PetService {
-
 
     @Autowired
     private PetRepository petRepository;
@@ -66,6 +66,7 @@ public class PetServiceImpl implements PetService {
         Pet pet = petRepository.findById(petId)
                 .orElseThrow(() -> new RuntimeException("존재하지 않는 펫입니다."));
 
+        // Ensure the pet belongs to the requesting user
         if (!pet.getUser().getId().equals(user.getId())) {
             throw new RuntimeException("본인의 펫이 아닙니다.");
         }
@@ -77,6 +78,7 @@ public class PetServiceImpl implements PetService {
         PetRoomResponse.PetInfo petInfo = new PetRoomResponse.PetInfo(
                 pet.getPetId(), pet.getPetTypeId(), level, food, water);
 
+        // Include only items with remaining count so the UI shows usable items
         List<PetRoomResponse.ItemInfo> items = itemRepository.findByUser_Id(user.getId())
                 .stream()
                 .filter(item -> item.getCount() > 0)
@@ -86,6 +88,7 @@ public class PetServiceImpl implements PetService {
         return new PetRoomResponse(petInfo, items);
     }
 
+    // Max food value per level: Lv1=5, Lv2=10, Lv3=15
     private int getFoodMax(int level) {
         return switch (level) {
             case 2 -> 10;
@@ -94,6 +97,7 @@ public class PetServiceImpl implements PetService {
         };
     }
 
+    // Max water value per level: Lv1=3, Lv2=6, Lv3=10
     private int getWaterMax(int level) {
         return switch (level) {
             case 2 -> 6;

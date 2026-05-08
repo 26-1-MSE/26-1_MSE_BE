@@ -1,5 +1,6 @@
 package com.ajou.pettown.item.dto;
 
+// Response returned after successfully acquiring an item, showing the updated stack.
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -14,6 +15,6 @@ public class ItemAcquireResponse {
     public static class ItemInfo {
         private Long itemId;
         private Integer itemTypeId;
-        private Integer count;
+        private Integer count; // updated total count after acquisition
     }
 }
