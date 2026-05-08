@@ -35,7 +35,7 @@ public class SecurityConfig {
     @Value("${admin.username:admin}")
     private String adminUsername;
 
-    @Value("${admin.password:admin1234}")
+    @Value("${admin.password:admin1234!}")
     private String adminPassword;
 
     @Bean
