@@ -1,5 +1,6 @@
 package com.ajou.pettown.item;
 
+// Repository for Item entity, providing queries scoped to a specific user.
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 import java.util.Optional;
