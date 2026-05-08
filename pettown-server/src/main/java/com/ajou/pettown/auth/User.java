@@ -3,6 +3,8 @@ package com.ajou.pettown.auth;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDateTime;
+
 @Getter
 @Builder
 @NoArgsConstructor
@@ -26,4 +28,11 @@ public class User {
 
     @Column(nullable = false)
     private String shopName;
+
+    @Column
+    private LocalDateTime lastActiveAt;
+
+    public void updateLastActiveAt() {
+        this.lastActiveAt = LocalDateTime.now();
+    }
 }

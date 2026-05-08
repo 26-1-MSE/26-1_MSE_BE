@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>User Management</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: sans-serif; background: #f0f2f5; min-height: 100vh; }
+        header { background: #4f46e5; color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
+        header h1 { font-size: 1.2rem; }
+        header a { color: white; text-decoration: none; font-size: .9rem; opacity: .85; }
+        header a:hover { opacity: 1; }
+        main { padding: 2rem; }
+        .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; gap: 1rem; flex-wrap: wrap; }
+        .search-form { display: flex; gap: .5rem; }
+        .search-form input { padding: .5rem .8rem; border: 1px solid #ccc; border-radius: 4px; font-size: .95rem; width: 260px; }
+        .btn { padding: .5rem 1rem; border: none; border-radius: 4px; font-size: .9rem; cursor: pointer; }
+        .btn-search { background: #4f46e5; color: white; }
+        .btn-search:hover { background: #4338ca; }
+        .btn-reset { background: #6b7280; color: white; }
+        .btn-reset:hover { background: #4b5563; }
+        .btn-danger { background: #dc2626; color: white; }
+        .btn-danger:hover { background: #b91c1c; }
+        .btn-sm { padding: .3rem .7rem; font-size: .82rem; }
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+        thead { background: #4f46e5; color: white; }
+        th, td { padding: .75rem 1rem; text-align: left; font-size: .9rem; }
+        tbody tr:hover { background: #f9fafb; }
+        tbody tr:not(:last-child) td { border-bottom: 1px solid #e5e7eb; }
+        .badge { display: inline-block; padding: .2rem .5rem; border-radius: 9999px; font-size: .78rem; background: #e0e7ff; color: #3730a3; }
+        .empty { text-align: center; padding: 3rem; color: #9ca3af; }
+        .total-info { font-size: .9rem; color: #6b7280; }
+        .never { color: #9ca3af; font-size: .82rem; }
+    </style>
+</head>
+<body>
+<header>
+    <h1>PetTown Admin</h1>
+    <a th:href="@{/admin/logout}">Logout</a>
+</header>
+
+<main>
+    <div class="toolbar">
+        <form class="search-form" th:action="@{/admin/users}" method="get">
+            <input type="text" name="keyword" placeholder="Search by ID or nickname"
+                   th:value="${keyword}">
+            <button type="submit" class="btn btn-search">Search</button>
+            <a th:href="@{/admin/users}" class="btn btn-reset">Reset</a>
+        </form>
+
+        <div style="display:flex; gap:.5rem; align-items:center;">
+            <span class="total-info" th:text="'Total: ' + ${users.size()} + ' users'"></span>
+            <form th:action="@{/admin/users/delete-all}" method="post"
+                  onsubmit="return confirm('Delete ALL users? This cannot be undone.')">
+                <button type="submit" class="btn btn-danger">Delete All</button>
+            </form>
+        </div>
+    </div>
+
+    <div th:if="${users.isEmpty()}" class="empty">
+        <p>No users found.</p>
+    </div>
+
+    <table th:if="${!users.isEmpty()}">
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>User ID</th>
+            <th>Nickname</th>
+            <th>Shop Name</th>
+            <th>Pets</th>
+            <th>Items</th>
+            <th>Mails</th>
+            <th>Last Active</th>
+            <th>Action</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="user : ${users}">
+            <td th:text="${user.id}"></td>
+            <td th:text="${user.userId}"></td>
+            <td th:text="${user.nickname}"></td>
+            <td th:text="${user.shopName}"></td>
+            <td><span class="badge" th:text="${user.petCount}"></span></td>
+            <td><span class="badge" th:text="${user.itemCount}"></span></td>
+            <td><span class="badge" th:text="${user.mailCount}"></span></td>
+            <td>
+                <span th:if="${user.lastActiveAt != null}"
+                      th:text="${#temporals.format(user.lastActiveAt, 'yyyy-MM-dd HH:mm')}"></span>
+                <span th:if="${user.lastActiveAt == null}" class="never">Never</span>
+            </td>
+            <td>
+                <form th:action="@{/admin/users/{id}/delete(id=${user.id})}" method="post"
+                      onsubmit="return confirm('Delete user ' + /*[[${user.userId}]]*/ '' + '?')">
+                    <input type="hidden" name="keyword" th:value="${keyword}">
+                    <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                </form>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</main>
+</body>
+</html>

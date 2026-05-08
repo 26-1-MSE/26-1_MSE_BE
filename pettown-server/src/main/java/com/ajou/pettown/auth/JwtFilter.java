@@ -30,8 +30,7 @@ public class JwtFilter extends OncePerRequestFilter {
 
         String path = request.getRequestURI();
 
-        // 로그인/회원가입은 토큰 없이 통과
-        if (path.startsWith("/auth")) {
+        if (path.startsWith("/auth") || path.startsWith("/admin")) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -57,14 +56,14 @@ public class JwtFilter extends OncePerRequestFilter {
             request.setAttribute("userId", userId);
 
             UsernamePasswordAuthenticationToken authentication =
-    new UsernamePasswordAuthenticationToken(userId, null, List.of());
-SecurityContextHolder.getContext().setAuthentication(authentication);
+                    new UsernamePasswordAuthenticationToken(userId, null, List.of());
+            SecurityContextHolder.getContext().setAuthentication(authentication);
 
         } catch (Exception e) {
-    System.out.println("Token verification : " + e.getMessage());
-    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-    return;
-}
+            System.out.println("Token verification : " + e.getMessage());
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            return;
+        }
 
         filterChain.doFilter(request, response);
     }
