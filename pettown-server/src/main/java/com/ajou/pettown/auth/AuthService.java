@@ -9,4 +9,5 @@ public interface AuthService {
     void register(RegisterRequest request);
     LoginResponse login(LoginRequest request);
     boolean checkUserIdDuplicate(String userId);
+    LoginResponse getUserStatus(String userId);
 }

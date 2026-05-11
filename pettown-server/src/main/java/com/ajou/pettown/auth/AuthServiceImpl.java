@@ -62,6 +62,18 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    public LoginResponse getUserStatus(String userId) {
+        User user = userRepository.findByUserId(userId)
+                .orElseThrow(() -> new RuntimeException("User not found."));
+        List<LoginResponse.OwnedPet> ownedPets = petRepository.findByUser_IdOrderByPetIdAsc(user.getId())
+                .stream()
+                .map(pet -> new LoginResponse.OwnedPet(pet.getPetId(), pet.getPetTypeId(), pet.getLevel()))
+                .collect(Collectors.toList());
+        boolean hasUnreadMail = mailRepository.existsByUser_IdAndIsRead(user.getId(), false);
+        return new LoginResponse(null, user.getNickname(), user.getShopName(), hasUnreadMail, ownedPets);
+    }
+
+    @Override
     public LoginResponse login(LoginRequest request) {
         User user = userRepository.findByUserId(request.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found."));
@@ -87,7 +99,7 @@ public class AuthServiceImpl implements AuthService {
         // Collect all pets owned by this user
         List<LoginResponse.OwnedPet> ownedPets = petRepository.findByUser_IdOrderByPetIdAsc(user.getId())
                 .stream()
-                .map(pet -> new LoginResponse.OwnedPet(pet.getPetId(), pet.getPetTypeId()))
+                .map(pet -> new LoginResponse.OwnedPet(pet.getPetId(), pet.getPetTypeId(), pet.getLevel()))
                 .collect(Collectors.toList());
 
         boolean hasUnreadMail = mailRepository.existsByUser_IdAndIsRead(user.getId(), false);

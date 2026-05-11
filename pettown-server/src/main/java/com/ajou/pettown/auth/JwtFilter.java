@@ -31,8 +31,8 @@ public class JwtFilter extends OncePerRequestFilter {
 
         String path = request.getRequestURI();
 
-        // Skip JWT validation for auth and admin routes (handled separately)
-        if (path.startsWith("/auth") || path.startsWith("/admin")) {
+        // Skip JWT validation for public auth endpoints and admin routes
+        if (path.equals("/auth/login") || path.equals("/auth/register") || path.startsWith("/auth/check") || path.startsWith("/admin")) {
             filterChain.doFilter(request, response);
             return;
         }

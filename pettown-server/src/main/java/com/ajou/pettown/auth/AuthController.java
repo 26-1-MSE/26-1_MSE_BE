@@ -39,4 +39,10 @@ public class AuthController {
     public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.login(request));
     }
+
+    // Returns current pet list and unread mail status for the authenticated user
+    @GetMapping("/status")
+    public ResponseEntity<LoginResponse> getUserStatus(@RequestAttribute("userId") String userId) {
+        return ResponseEntity.ok(authService.getUserStatus(userId));
+    }
 }
