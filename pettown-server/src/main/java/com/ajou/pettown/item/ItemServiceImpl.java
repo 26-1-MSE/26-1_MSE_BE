@@ -5,6 +5,7 @@ import com.ajou.pettown.auth.User;
 import com.ajou.pettown.auth.UserRepository;
 import com.ajou.pettown.item.dto.ItemAcquireResponse;
 import com.ajou.pettown.item.dto.ItemUseResponse;
+import com.ajou.pettown.mail.PetMailService;
 import com.ajou.pettown.pet.Pet;
 import com.ajou.pettown.pet.PetRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +24,9 @@ public class ItemServiceImpl implements ItemService {
     @Autowired
     private PetRepository petRepository;
 
+    @Autowired
+    private PetMailService petMailService;
+
     @Override
     @Transactional
     public ItemAcquireResponse acquireItem(String userId, Integer itemTypeId, Integer count) {
@@ -38,6 +42,8 @@ public class ItemServiceImpl implements ItemService {
 
         item.addCount(count);
         itemRepository.save(item);
+
+        petMailService.sendItemMails(user, itemTypeId);
 
         return new ItemAcquireResponse(true,
                 new ItemAcquireResponse.ItemInfo(item.getItemId(), item.getItemTypeId(), item.getCount()));
@@ -75,6 +81,7 @@ public class ItemServiceImpl implements ItemService {
                 && pet.getFood() >= getFoodMax(pet.getLevel())
                 && pet.getWater() >= getWaterMax(pet.getLevel())) {
             pet.levelUp();
+            petMailService.sendLevelUpMail(user, pet);
         }
 
         item.useOne();

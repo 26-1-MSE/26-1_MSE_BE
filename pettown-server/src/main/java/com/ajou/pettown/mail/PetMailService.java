@@ -1,0 +1,284 @@
+package com.ajou.pettown.mail;
+
+import com.ajou.pettown.auth.User;
+import com.ajou.pettown.pet.Pet;
+import com.ajou.pettown.pet.PetRepository;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClient;
+
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+
+@Slf4j
+@Service
+public class PetMailService {
+
+    private static final String SYSTEM_PROMPT = """
+            You are a virtual pet message generator for a mobile game called PetTown.
+            Generate a short in-game message from a pet to their owner based on the given trigger.
+
+            There are four pets, each with a distinct personality and speech style:
+
+            [Judy — Affectionate, Social]
+            Bright and warm tone, lots of exclamation marks, expresses affection openly.
+            Uses trailing "~" to sound soft and cheerful.
+            Examples:
+            - "Doesn't my fur look extra shiny today? It's all thanks to {username} taking such good care of me!"
+            - "I've grown this much!! {username}, it's all thanks to you, thank you~!"
+            - "Earlier, the apple was really delicious!! You'll give me more, right?"
+
+            [Nick — Mischievous]
+            Short and bouncy sentences, teasing nuance, playful and self-confident.
+            Often says "wahaha" when excited or amused.
+            Examples:
+            - "I was bored so I took a nap. But hey, I saw you in my dream and it was so funny, wahaha!"
+            - "I grew up!! No one can beat me now, wahahahaha!"
+            - "The taste was... okay I guess? You can give me more next time~"
+
+            [Bambi — Neat, Prim]
+            Calm and concise, tsundere — acts indifferent but subtly caring.
+            Uses understated phrasing; admits feelings reluctantly with "..Well," or "Not that I...".
+            Examples:
+            - "I groomed my fur by myself today. Not that I had nothing else to do."
+            - "..I've grown. Expected result, though."
+            - "The water was cool and nice. Please keep it up."
+
+            [Pumba — Shy, Innocent]
+            Shy and careful, sentences trail off with ".." at the end.
+            Hesitates at the start ("Um.."), expresses gratitude timidly.
+            Examples:
+            - "Um.. I saw a flower today. It was so pretty it reminded me of {username}.."
+            - "I've grown bigger..! Th-thank you. Please keep taking care of me..!"
+            - "Drinking water makes my whole body feel cool.. It's like even my blush is fading."
+
+            Triggers:
+            - LEVEL_UP: The pet just reached a new level. Celebrate the growth milestone with joy or pride, in the pet's personality.
+            - RANDOM: A spontaneous message on the owner's first visit of the day.
+
+            Constraints:
+            - Title: 36 characters or fewer (spaces included)
+            - Content (message): 244 characters or fewer (spaces included)
+            - Address the owner by their username; use "Master" if no username is provided
+            - Write in English only
+            - The pet always refers to itself using "I" (first person singular)
+            - Do not use any emoji or emoticons
+
+            Output ONLY a JSON object with exactly these two keys: "title" and "message". No markdown, no extra text.
+            """;
+
+    @Value("${openai.api.key}")
+    private String apiKey;
+
+    @Autowired
+    private PetRepository petRepository;
+
+    @Autowired
+    private MailRepository mailRepository;
+
+    @Autowired
+    private MailSendLogRepository logRepository;
+
+    private WebClient webClient;
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    @PostConstruct
+    public void init() {
+        this.webClient = WebClient.builder()
+                .baseUrl("https://api.openai.com")
+                .defaultHeader("Authorization", "Bearer " + apiKey)
+                .defaultHeader("Content-Type", "application/json")
+                .build();
+    }
+
+    // Called when a pet levels up — no daily limit
+    public void sendLevelUpMail(User user, Pet pet) {
+        try {
+            String petName = getPetName(pet.getPetTypeId());
+            String username = resolveUsername(user);
+            Map<String, String> msg = generateMessage(petName, "LEVEL_UP", username, null);
+            if (msg != null) {
+                saveMail(user, petName, msg);
+            }
+        } catch (Exception e) {
+            log.warn("레벨업 쪽지 발송 실패 petId={}: {}", pet.getPetId(), e.getMessage());
+        }
+    }
+
+    // Called when an item is acquired — at most once per pet per day
+    public void sendItemMails(User user, Integer itemTypeId) {
+        LocalDate today = LocalDate.now();
+        List<Pet> pets = petRepository.findByUser_IdOrderByPetIdAsc(user.getId());
+        String itemName = getItemName(itemTypeId);
+        String username = resolveUsername(user);
+
+        for (Pet pet : pets) {
+            if (logRepository.existsByPetIdAndTriggerTypeAndSentDate(pet.getPetId(), "ITEM", today)) {
+                continue;
+            }
+            try {
+                String petName = getPetName(pet.getPetTypeId());
+                Map<String, String> msg = generateMessage(petName, "ITEM_RECEIVED", username, itemName);
+                if (msg != null) {
+                    saveMail(user, petName, msg);
+                    logRepository.save(MailSendLog.builder()
+                            .userId(user.getId())
+                            .petId(pet.getPetId())
+                            .triggerType("ITEM")
+                            .sentDate(today)
+                            .build());
+                }
+            } catch (Exception e) {
+                log.warn("아이템 쪽지 발송 실패 petId={}: {}", pet.getPetId(), e.getMessage());
+            }
+        }
+    }
+
+    // Called on first login of the day — at most once per user per day, from 1 random pet
+    public void sendRandomMail(User user) {
+        LocalDate today = LocalDate.now();
+        if (logRepository.existsByUserIdAndTriggerTypeAndSentDate(user.getId(), "RANDOM", today)) {
+            return;
+        }
+        List<Pet> pets = petRepository.findByUser_IdOrderByPetIdAsc(user.getId());
+        if (pets.isEmpty()) {
+            return;
+        }
+        try {
+            Pet pet = pets.get(new Random().nextInt(pets.size()));
+            String petName = getPetName(pet.getPetTypeId());
+            String username = resolveUsername(user);
+            Map<String, String> msg = generateMessage(petName, "RANDOM", username, null);
+            if (msg != null) {
+                saveMail(user, petName, msg);
+                logRepository.save(MailSendLog.builder()
+                        .userId(user.getId())
+                        .petId(null)
+                        .triggerType("RANDOM")
+                        .sentDate(today)
+                        .build());
+            }
+        } catch (Exception e) {
+            log.warn("랜덤 쪽지 발송 실패 userId={}: {}", user.getId(), e.getMessage());
+        }
+    }
+
+    private Map<String, String> generateMessage(String petName, String triggerType, String username, String itemName) {
+        String userPrompt = buildUserPrompt(petName, triggerType, username, itemName);
+
+        Map<String, Object> requestBody = Map.of(
+                "model", "gpt-4o-mini",
+                "messages", List.of(
+                        Map.of("role", "system", "content", SYSTEM_PROMPT),
+                        Map.of("role", "user", "content", userPrompt)
+                ),
+                "response_format", Map.of("type", "json_object"),
+                "max_tokens", 300,
+                "temperature", 0.85
+        );
+
+        String responseBody = webClient.post()
+                .uri("/v1/chat/completions")
+                .bodyValue(requestBody)
+                .retrieve()
+                .bodyToMono(String.class)
+                .block();
+
+        OpenAiResponse response;
+        try {
+            response = objectMapper.readValue(responseBody, OpenAiResponse.class);
+        } catch (Exception e) {
+            log.warn("OpenAI 응답 파싱 실패: {}", e.getMessage());
+            return null;
+        }
+
+        if (response == null || response.choices == null || response.choices.isEmpty()) {
+            return null;
+        }
+
+        String content = response.choices.get(0).message.content;
+        try {
+            @SuppressWarnings("unchecked")
+            Map<String, String> parsed = objectMapper.readValue(content, Map.class);
+            return parsed;
+        } catch (Exception e) {
+            log.warn("쪽지 JSON 파싱 실패: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    private String buildUserPrompt(String petName, String triggerType, String username, String itemName) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Pet: ").append(petName).append("\n");
+        sb.append("Trigger: ").append(triggerType).append("\n");
+        sb.append("Username: ").append(username).append("\n");
+        if (itemName != null) {
+            sb.append("Item: ").append(itemName).append("\n");
+        }
+        return sb.toString();
+    }
+
+    private void saveMail(User user, String petName, Map<String, String> msg) {
+        String title = truncate(msg.getOrDefault("title", petName + "'s Message"), 36);
+        String content = truncate(msg.getOrDefault("message", ""), 244);
+        mailRepository.save(Mail.builder()
+                .user(user)
+                .title(title)
+                .sender(petName)
+                .content(content)
+                .build());
+    }
+
+    private String truncate(String text, int maxLength) {
+        if (text == null) return "";
+        return text.length() <= maxLength ? text : text.substring(0, maxLength);
+    }
+
+    private String resolveUsername(User user) {
+        String nickname = user.getNickname();
+        return (nickname != null && !nickname.isBlank()) ? nickname : "Master";
+    }
+
+    static String getPetName(Integer petTypeId) {
+        return switch (petTypeId) {
+            case 1 -> "Judy";
+            case 2 -> "Nick";
+            case 3 -> "Bambi";
+            case 4 -> "Pumba";
+            default -> "Unknown";
+        };
+    }
+
+    private String getItemName(Integer itemTypeId) {
+        return switch (itemTypeId) {
+            case 1 -> "Pumpkin";
+            case 2 -> "Banana";
+            case 3 -> "Apple";
+            case 4 -> "Carrot";
+            case 5 -> "Water";
+            default -> "Item";
+        };
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private static class OpenAiResponse {
+        public List<Choice> choices;
+
+        @JsonIgnoreProperties(ignoreUnknown = true)
+        public static class Choice {
+            public Message message;
+
+            @JsonIgnoreProperties(ignoreUnknown = true)
+            public static class Message {
+                public String content;
+            }
+        }
+    }
+}

@@ -5,6 +5,7 @@ import com.ajou.pettown.auth.dto.LoginRequest;
 import com.ajou.pettown.auth.dto.LoginResponse;
 import com.ajou.pettown.auth.dto.RegisterRequest;
 import com.ajou.pettown.mail.MailRepository;
+import com.ajou.pettown.mail.PetMailService;
 import com.ajou.pettown.pet.PetRepository;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -14,6 +15,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -32,6 +34,9 @@ public class AuthServiceImpl implements AuthService {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private PetMailService petMailService;
 
     @Value("${jwt.secret}")
     private String jwtSecret;
@@ -82,9 +87,17 @@ public class AuthServiceImpl implements AuthService {
             throw new RuntimeException("Invalid password.");
         }
 
+        // Detect first login of the day before updating lastActiveAt
+        boolean isFirstLoginToday = user.getLastActiveAt() == null
+                || !user.getLastActiveAt().toLocalDate().equals(LocalDate.now());
+
         // Record the time of this login for admin visibility
         user.updateLastActiveAt();
         userRepository.save(user);
+
+        if (isFirstLoginToday) {
+            petMailService.sendRandomMail(user);
+        }
 
         System.out.println("Token generation secret: " + jwtSecret);
 
