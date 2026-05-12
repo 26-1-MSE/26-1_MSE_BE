@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -60,7 +61,8 @@ public class PetMailService {
             - "Drinking water makes my whole body feel cool.. It's like even my blush is fading."
 
             Triggers:
-            - LEVEL_UP: The pet just reached a new level. Celebrate the growth milestone with joy or pride, in the pet's personality.
+            - LEVEL_UP: The pet just grew bigger in size. Express joy or pride about growing larger. Do NOT mention new abilities, skills, or tricks — only physical growth.
+            - ITEM_RECEIVED: The owner gave the pet an item (food or water). React to it in character.
             - RANDOM: A spontaneous message on the owner's first visit of the day.
 
             Constraints:
@@ -189,6 +191,7 @@ public class PetMailService {
                 .bodyValue(requestBody)
                 .retrieve()
                 .bodyToMono(String.class)
+                .timeout(Duration.ofSeconds(10))
                 .block();
 
         OpenAiResponse response;

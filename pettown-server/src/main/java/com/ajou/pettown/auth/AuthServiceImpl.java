@@ -99,8 +99,6 @@ public class AuthServiceImpl implements AuthService {
             petMailService.sendRandomMail(user);
         }
 
-        System.out.println("Token generation secret: " + jwtSecret);
-
         // Issue a signed JWT valid for the configured expiration period
         String token = Jwts.builder()
                 .subject(user.getUserId())

@@ -11,8 +11,8 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @Entity
 @Table(name = "mail_send_logs", indexes = {
-        @Index(name = "idx_mail_log_pet_type_date", columnList = "petId, triggerType, sentDate"),
-        @Index(name = "idx_mail_log_user_type_date", columnList = "userId, triggerType, sentDate")
+        @Index(name = "idx_mail_log_pet_type_date", columnList = "pet_id, trigger_type, sent_date"),
+        @Index(name = "idx_mail_log_user_type_date", columnList = "user_id, trigger_type, sent_date")
 })
 public class MailSendLog {
 
