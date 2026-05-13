@@ -21,6 +21,7 @@ public class LoginResponse {
     public static class OwnedPet {
         private Long petId;
         private Integer petTypeId;
+        private String petName;
         private Integer level;
     }
 }

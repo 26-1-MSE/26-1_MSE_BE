@@ -2,6 +2,7 @@ package com.ajou.pettown.mail;
 
 import com.ajou.pettown.auth.User;
 import com.ajou.pettown.pet.Pet;
+import com.ajou.pettown.pet.PetNameMapper;
 import com.ajou.pettown.pet.PetRepository;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -73,6 +74,10 @@ public class PetMailService {
             - The pet always refers to itself using "I" (first person singular)
             - Do not use any emoji or emoticons
 
+            Input fields:
+            - "Pet type": the personality type (Judy / Nick / Bambi / Pumba) — use this to determine speech style
+            - "Pet name": the individual name of this pet (Scout / Clover / Rusty / Daisy) — use this as the pet's name in the message and title
+
             Output ONLY a JSON object with exactly these two keys: "title" and "message". No markdown, no extra text.
             """;
 
@@ -103,9 +108,10 @@ public class PetMailService {
     // Called when a pet levels up — no daily limit
     public void sendLevelUpMail(User user, Pet pet) {
         try {
-            String petName = getPetName(pet.getPetTypeId());
+            String petName = PetNameMapper.getName(pet.getPetIndex());
+            String petTypeName = getPetTypeName(pet.getPetTypeId());
             String username = resolveUsername(user);
-            Map<String, String> msg = generateMessage(petName, "LEVEL_UP", username, null);
+            Map<String, String> msg = generateMessage(petTypeName, petName, "LEVEL_UP", username, null);
             if (msg != null) {
                 saveMail(user, petName, msg);
             }
@@ -126,8 +132,9 @@ public class PetMailService {
                 continue;
             }
             try {
-                String petName = getPetName(pet.getPetTypeId());
-                Map<String, String> msg = generateMessage(petName, "ITEM_RECEIVED", username, itemName);
+                String petName = PetNameMapper.getName(pet.getPetIndex());
+                String petTypeName = getPetTypeName(pet.getPetTypeId());
+                Map<String, String> msg = generateMessage(petTypeName, petName, "ITEM_RECEIVED", username, itemName);
                 if (msg != null) {
                     saveMail(user, petName, msg);
                     logRepository.save(MailSendLog.builder()
@@ -155,9 +162,10 @@ public class PetMailService {
         }
         try {
             Pet pet = pets.get(new Random().nextInt(pets.size()));
-            String petName = getPetName(pet.getPetTypeId());
+            String petName = PetNameMapper.getName(pet.getPetIndex());
+            String petTypeName = getPetTypeName(pet.getPetTypeId());
             String username = resolveUsername(user);
-            Map<String, String> msg = generateMessage(petName, "RANDOM", username, null);
+            Map<String, String> msg = generateMessage(petTypeName, petName, "RANDOM", username, null);
             if (msg != null) {
                 saveMail(user, petName, msg);
                 logRepository.save(MailSendLog.builder()
@@ -172,8 +180,8 @@ public class PetMailService {
         }
     }
 
-    private Map<String, String> generateMessage(String petName, String triggerType, String username, String itemName) {
-        String userPrompt = buildUserPrompt(petName, triggerType, username, itemName);
+    private Map<String, String> generateMessage(String petTypeName, String petName, String triggerType, String username, String itemName) {
+        String userPrompt = buildUserPrompt(petTypeName, petName, triggerType, username, itemName);
 
         Map<String, Object> requestBody = Map.of(
                 "model", "gpt-4o-mini",
@@ -217,9 +225,10 @@ public class PetMailService {
         }
     }
 
-    private String buildUserPrompt(String petName, String triggerType, String username, String itemName) {
+    private String buildUserPrompt(String petTypeName, String petName, String triggerType, String username, String itemName) {
         StringBuilder sb = new StringBuilder();
-        sb.append("Pet: ").append(petName).append("\n");
+        sb.append("Pet type: ").append(petTypeName).append("\n"); // personality reference (Judy/Nick/Bambi/Pumba)
+        sb.append("Pet name: ").append(petName).append("\n");     // individual name (Scout/Clover/Rusty/Daisy)
         sb.append("Trigger: ").append(triggerType).append("\n");
         sb.append("Username: ").append(username).append("\n");
         if (itemName != null) {
@@ -249,7 +258,7 @@ public class PetMailService {
         return (nickname != null && !nickname.isBlank()) ? nickname : "Master";
     }
 
-    static String getPetName(Integer petTypeId) {
+    private String getPetTypeName(Integer petTypeId) {
         return switch (petTypeId) {
             case 1 -> "Judy";
             case 2 -> "Nick";

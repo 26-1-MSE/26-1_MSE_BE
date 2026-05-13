@@ -6,6 +6,7 @@ import com.ajou.pettown.auth.dto.LoginResponse;
 import com.ajou.pettown.auth.dto.RegisterRequest;
 import com.ajou.pettown.mail.MailRepository;
 import com.ajou.pettown.mail.PetMailService;
+import com.ajou.pettown.pet.PetNameMapper;
 import com.ajou.pettown.pet.PetRepository;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -72,7 +73,7 @@ public class AuthServiceImpl implements AuthService {
                 .orElseThrow(() -> new RuntimeException("User not found."));
         List<LoginResponse.OwnedPet> ownedPets = petRepository.findByUser_IdOrderByPetIdAsc(user.getId())
                 .stream()
-                .map(pet -> new LoginResponse.OwnedPet(pet.getPetId(), pet.getPetTypeId(), pet.getLevel()))
+                .map(pet -> new LoginResponse.OwnedPet(pet.getPetId(), pet.getPetTypeId(), PetNameMapper.getName(pet.getPetIndex()), pet.getLevel()))
                 .collect(Collectors.toList());
         boolean hasUnreadMail = mailRepository.existsByUser_IdAndIsRead(user.getId(), false);
         return new LoginResponse(null, user.getNickname(), user.getShopName(), hasUnreadMail, ownedPets);
@@ -110,7 +111,7 @@ public class AuthServiceImpl implements AuthService {
         // Collect all pets owned by this user
         List<LoginResponse.OwnedPet> ownedPets = petRepository.findByUser_IdOrderByPetIdAsc(user.getId())
                 .stream()
-                .map(pet -> new LoginResponse.OwnedPet(pet.getPetId(), pet.getPetTypeId(), pet.getLevel()))
+                .map(pet -> new LoginResponse.OwnedPet(pet.getPetId(), pet.getPetTypeId(), PetNameMapper.getName(pet.getPetIndex()), pet.getLevel()))
                 .collect(Collectors.toList());
 
         boolean hasUnreadMail = mailRepository.existsByUser_IdAndIsRead(user.getId(), false);

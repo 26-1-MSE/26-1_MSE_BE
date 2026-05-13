@@ -28,6 +28,7 @@ public class PetAcquireResponse {
     public static class PetInfo {
         private Long petId;
         private Integer petTypeId;
+        private String petName;
         private Integer level;
     }
 }

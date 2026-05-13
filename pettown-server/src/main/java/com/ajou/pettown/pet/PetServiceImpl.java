@@ -37,12 +37,13 @@ public class PetServiceImpl implements PetService {
         Pet pet = Pet.builder()
                 .user(user)
                 .petTypeId(petTypeId)
+                .petIndex(count + 1) // 1-based: current count before save + 1
                 .build();
         petRepository.save(pet);
 
         return new PetAcquireResponse(
                 true,
-                new PetAcquireResponse.PetInfo(pet.getPetId(), pet.getPetTypeId(), pet.getLevel()),
+                new PetAcquireResponse.PetInfo(pet.getPetId(), pet.getPetTypeId(), PetNameMapper.getName(pet.getPetIndex()), pet.getLevel()),
                 user.getUserId(),
                 count + 1);
     }
@@ -65,7 +66,7 @@ public class PetServiceImpl implements PetService {
         PetRoomResponse.Stat water = new PetRoomResponse.Stat(pet.getWater(), getWaterMax(level));
 
         PetRoomResponse.PetInfo petInfo = new PetRoomResponse.PetInfo(
-                pet.getPetId(), pet.getPetTypeId(), level, food, water);
+                pet.getPetId(), pet.getPetTypeId(), PetNameMapper.getName(pet.getPetIndex()), level, food, water);
 
         // Include only items with remaining count so the UI shows usable items
         List<PetRoomResponse.ItemInfo> items = itemRepository.findByUser_Id(user.getId())

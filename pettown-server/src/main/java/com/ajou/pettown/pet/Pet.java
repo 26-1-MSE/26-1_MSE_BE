@@ -24,6 +24,9 @@ public class Pet {
     @Column(nullable = false)
     private Integer petTypeId;
 
+    @Column(nullable = false)
+    private Integer petIndex; // 1-based acquisition order per user (1~4), used for name mapping
+
     @Builder.Default
     @Column(nullable = false)
     private Integer level = 1;

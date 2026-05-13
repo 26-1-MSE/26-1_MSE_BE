@@ -17,6 +17,7 @@ public class PetRoomResponse {
     public static class PetInfo {
         private Long petId;
         private Integer petTypeId;
+        private String petName;
         private Integer level;
         private Stat food;
         private Stat water;
