@@ -31,7 +31,7 @@ public class PetServiceImpl implements PetService {
 
         int count = (int) petRepository.countByUser_Id(user.getId());
         if (count >= 4) {
-            throw new RuntimeException("펫은 최대 4마리까지만 보유할 수 있습니다.");
+            throw new RuntimeException("PET_LIMIT_EXCEEDED");
         }
 
         Pet pet = Pet.builder()
