@@ -106,8 +106,13 @@ public class PetMailService {
                 .build();
     }
 
-    // Called when a pet levels up — no daily limit
+    // Called when a pet levels up — at most once per pet per level
     public void sendLevelUpMail(User user, Pet pet) {
+        // triggerType = "LEVEL_UP_2" / "LEVEL_UP_3" 으로 레벨별 중복 방지
+        String triggerType = "LEVEL_UP_" + pet.getLevel();
+        if (logRepository.existsByPetIdAndTriggerTypeAndSentDate(pet.getPetId(), triggerType, java.time.LocalDate.now())) {
+            return;
+        }
         try {
             String petName = PetNameMapper.getName(pet.getPetIndex());
             String petTypeName = getPetTypeName(pet.getPetTypeId());
@@ -115,6 +120,16 @@ public class PetMailService {
             Map<String, String> msg = generateMessage(petTypeName, petName, "LEVEL_UP", username, null);
             if (msg != null) {
                 saveMail(user, petName, msg);
+                try {
+                    logRepository.save(MailSendLog.builder()
+                            .userId(user.getId())
+                            .petId(pet.getPetId())
+                            .triggerType(triggerType)
+                            .sentDate(java.time.LocalDate.now())
+                            .build());
+                } catch (org.springframework.dao.DataIntegrityViolationException ignored) {
+                    // 동시 요청으로 이미 로그 저장됨
+                }
             }
         } catch (Exception e) {
             log.warn("레벨업 쪽지 발송 실패 petId={}: {}", pet.getPetId(), e.getMessage());
@@ -133,21 +148,22 @@ public class PetMailService {
                 continue;
             }
             try {
+                // 로그 먼저 저장 — 실패(중복)하면 발송 자체를 건너뜀
+                try {
+                    logRepository.save(MailSendLog.builder()
+                            .userId(user.getId())
+                            .petId(pet.getPetId())
+                            .triggerType("ITEM")
+                            .sentDate(today)
+                            .build());
+                } catch (DataIntegrityViolationException e) {
+                    continue; // 이미 발송된 것으로 간주, OpenAI 호출 없이 스킵
+                }
                 String petName = PetNameMapper.getName(pet.getPetIndex());
                 String petTypeName = getPetTypeName(pet.getPetTypeId());
                 Map<String, String> msg = generateMessage(petTypeName, petName, "ITEM_RECEIVED", username, itemName);
                 if (msg != null) {
                     saveMail(user, petName, msg);
-                    try {
-                        logRepository.save(MailSendLog.builder()
-                                .userId(user.getId())
-                                .petId(pet.getPetId())
-                                .triggerType("ITEM")
-                                .sentDate(today)
-                                .build());
-                    } catch (DataIntegrityViolationException ignored) {
-                        // 동시 요청으로 이미 로그 저장됨 — 중복 발송이지만 무시
-                    }
                 }
             } catch (Exception e) {
                 log.warn("아이템 쪽지 발송 실패 petId={}: {}", pet.getPetId(), e.getMessage());
@@ -166,6 +182,17 @@ public class PetMailService {
             return;
         }
         try {
+            // 로그 먼저 저장 — 실패(중복)하면 발송 자체를 건너뜀
+            try {
+                logRepository.save(MailSendLog.builder()
+                        .userId(user.getId())
+                        .petId(null)
+                        .triggerType("RANDOM")
+                        .sentDate(today)
+                        .build());
+            } catch (DataIntegrityViolationException e) {
+                return; // 이미 발송된 것으로 간주
+            }
             Pet pet = pets.get(new Random().nextInt(pets.size()));
             String petName = PetNameMapper.getName(pet.getPetIndex());
             String petTypeName = getPetTypeName(pet.getPetTypeId());
@@ -173,12 +200,6 @@ public class PetMailService {
             Map<String, String> msg = generateMessage(petTypeName, petName, "RANDOM", username, null);
             if (msg != null) {
                 saveMail(user, petName, msg);
-                logRepository.save(MailSendLog.builder()
-                        .userId(user.getId())
-                        .petId(null)
-                        .triggerType("RANDOM")
-                        .sentDate(today)
-                        .build());
             }
         } catch (Exception e) {
             log.warn("랜덤 쪽지 발송 실패 userId={}: {}", user.getId(), e.getMessage());
