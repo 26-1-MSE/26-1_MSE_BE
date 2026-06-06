@@ -10,6 +10,7 @@ import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -137,12 +138,16 @@ public class PetMailService {
                 Map<String, String> msg = generateMessage(petTypeName, petName, "ITEM_RECEIVED", username, itemName);
                 if (msg != null) {
                     saveMail(user, petName, msg);
-                    logRepository.save(MailSendLog.builder()
-                            .userId(user.getId())
-                            .petId(pet.getPetId())
-                            .triggerType("ITEM")
-                            .sentDate(today)
-                            .build());
+                    try {
+                        logRepository.save(MailSendLog.builder()
+                                .userId(user.getId())
+                                .petId(pet.getPetId())
+                                .triggerType("ITEM")
+                                .sentDate(today)
+                                .build());
+                    } catch (DataIntegrityViolationException ignored) {
+                        // 동시 요청으로 이미 로그 저장됨 — 중복 발송이지만 무시
+                    }
                 }
             } catch (Exception e) {
                 log.warn("아이템 쪽지 발송 실패 petId={}: {}", pet.getPetId(), e.getMessage());

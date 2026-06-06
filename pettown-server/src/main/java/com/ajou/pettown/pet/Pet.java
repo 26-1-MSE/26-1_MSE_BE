@@ -10,7 +10,9 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "pets")
+@Table(name = "pets", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"user_id", "pet_index"})
+})
 public class Pet {
 
     @Id

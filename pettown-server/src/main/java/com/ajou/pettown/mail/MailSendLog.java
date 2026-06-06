@@ -13,6 +13,9 @@ import java.time.LocalDate;
 @Table(name = "mail_send_logs", indexes = {
         @Index(name = "idx_mail_log_pet_type_date", columnList = "pet_id, trigger_type, sent_date"),
         @Index(name = "idx_mail_log_user_type_date", columnList = "user_id, trigger_type, sent_date")
+}, uniqueConstraints = {
+        // ITEM 트리거: pet 단위 중복 방지 (RANDOM은 pet_id=null이라 MySQL에서 null 유니크 무시됨)
+        @UniqueConstraint(name = "uq_mail_log_pet_trigger_date", columnNames = {"pet_id", "trigger_type", "sent_date"})
 })
 public class MailSendLog {
 

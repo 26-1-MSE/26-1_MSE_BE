@@ -7,6 +7,7 @@ import com.ajou.pettown.item.ItemRepository;
 import com.ajou.pettown.pet.dto.PetAcquireResponse;
 import com.ajou.pettown.pet.dto.PetRoomResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -34,12 +35,18 @@ public class PetServiceImpl implements PetService {
             throw new RuntimeException("PET_LIMIT_EXCEEDED");
         }
 
-        Pet pet = Pet.builder()
-                .user(user)
-                .petTypeId(petTypeId)
-                .petIndex(count + 1) // 1-based: current count before save + 1
-                .build();
-        petRepository.save(pet);
+        Pet pet;
+        try {
+            pet = Pet.builder()
+                    .user(user)
+                    .petTypeId(petTypeId)
+                    .petIndex(count + 1)
+                    .build();
+            petRepository.save(pet);
+        } catch (DataIntegrityViolationException e) {
+            // race condition: 동시 요청이 같은 petIndex로 insert 시도
+            throw new RuntimeException("PET_LIMIT_EXCEEDED");
+        }
 
         return new PetAcquireResponse(
                 true,
