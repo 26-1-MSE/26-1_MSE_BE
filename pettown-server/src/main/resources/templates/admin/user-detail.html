@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>User Detail</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: sans-serif; background: #f0f2f5; min-height: 100vh; }
+        header { background: #4f46e5; color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
+        header h1 { font-size: 1.2rem; }
+        header a { color: white; text-decoration: none; font-size: .9rem; opacity: .85; }
+        header a:hover { opacity: 1; }
+        main { padding: 2rem; max-width: 900px; margin: 0 auto; }
+        .back { display: inline-block; margin-bottom: 1.5rem; color: #4f46e5; text-decoration: none; font-size: .9rem; }
+        .back:hover { text-decoration: underline; }
+        .card { background: white; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,.08); padding: 1.5rem; margin-bottom: 1.5rem; }
+        .card h2 { font-size: 1rem; color: #374151; margin-bottom: 1rem; border-bottom: 1px solid #e5e7eb; padding-bottom: .5rem; }
+        .info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: .5rem 2rem; font-size: .9rem; }
+        .info-grid .label { color: #6b7280; }
+        .info-grid .value { color: #111827; font-weight: 500; }
+        table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+        th { text-align: left; padding: .6rem .8rem; background: #f3f4f6; color: #374151; font-weight: 600; }
+        td { padding: .6rem .8rem; border-bottom: 1px solid #e5e7eb; color: #111827; }
+        tbody tr:last-child td { border-bottom: none; }
+        .badge { display: inline-block; padding: .2rem .5rem; border-radius: 9999px; font-size: .78rem; }
+        .badge-level { background: #fef3c7; color: #92400e; }
+        .badge-count { background: #e0e7ff; color: #3730a3; }
+        .empty { color: #9ca3af; font-size: .85rem; padding: .5rem 0; }
+        .never { color: #9ca3af; }
+        .btn { padding: .4rem .9rem; border: none; border-radius: 4px; font-size: .85rem; cursor: pointer; }
+        .btn-primary { background: #4f46e5; color: white; }
+        .btn-primary:hover { background: #4338ca; }
+        .btn-add { background: #10b981; color: white; font-size: .8rem; padding: .25rem .6rem; border: none; border-radius: 4px; cursor: pointer; }
+        .btn-add:hover { background: #059669; }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid #e5e7eb; padding-bottom: .5rem; }
+        .section-header h2 { font-size: 1rem; color: #374151; border: none; margin: 0; padding: 0; }
+        /* Modal */
+        .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 100; justify-content: center; align-items: center; }
+        .overlay.open { display: flex; }
+        .modal { background: white; border-radius: 8px; padding: 1.5rem; width: 360px; box-shadow: 0 4px 20px rgba(0,0,0,.15); }
+        .modal h3 { font-size: 1rem; margin-bottom: 1.2rem; color: #111827; }
+        .item-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: .8rem; font-size: .9rem; }
+        .item-row label { color: #374151; width: 100px; }
+        .item-row input { width: 100px; padding: .35rem .6rem; border: 1px solid #d1d5db; border-radius: 4px; font-size: .9rem; text-align: right; }
+        .modal-actions { display: flex; justify-content: flex-end; gap: .5rem; margin-top: 1.2rem; }
+        .btn-cancel { background: #e5e7eb; color: #374151; }
+        .btn-cancel:hover { background: #d1d5db; }
+    </style>
+</head>
+<body>
+<header>
+    <h1>PetTown Admin</h1>
+    <a th:href="@{/admin/logout}">Logout</a>
+</header>
+
+<main>
+    <a th:href="@{/admin/users}" class="back">← Back to Users</a>
+
+    <!-- User Info -->
+    <div class="card">
+        <h2>User Info</h2>
+        <div class="info-grid">
+            <span class="label">ID</span>
+            <span class="value" th:text="${user.id}"></span>
+            <span class="label">User ID</span>
+            <span class="value" th:text="${user.userId}"></span>
+            <span class="label">Nickname</span>
+            <span class="value" th:text="${user.nickname}"></span>
+            <span class="label">Shop Name</span>
+            <span class="value" th:text="${user.shopName}"></span>
+            <span class="label">Last Active</span>
+            <span class="value">
+                <span th:if="${user.lastActiveAt != null}"
+                      th:text="${#temporals.format(user.lastActiveAt, 'yyyy-MM-dd HH:mm')}"></span>
+                <span th:if="${user.lastActiveAt == null}" class="never">Never</span>
+            </span>
+        </div>
+    </div>
+
+    <!-- Pets -->
+    <div class="card">
+        <h2>Pets</h2>
+        <p th:if="${user.pets.isEmpty()}" class="empty">No pets.</p>
+        <table th:if="${!user.pets.isEmpty()}">
+            <thead>
+            <tr>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Level</th>
+                <th>Food</th>
+                <th>Water</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="pet : ${user.pets}">
+                <td th:text="${pet.name}"></td>
+                <td th:text="${pet.typeName}"></td>
+                <td><span class="badge badge-level" th:text="'Lv.' + ${pet.level}"></span></td>
+                <td th:text="${pet.food}"></td>
+                <td th:text="${pet.water}"></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Items -->
+    <div class="card">
+        <div class="section-header">
+            <h2>Items</h2>
+            <button class="btn-add" onclick="document.getElementById('itemModal').classList.add('open')">+ Add Items</button>
+        </div>
+        <p th:if="${user.items.isEmpty()}" class="empty">No items.</p>
+        <table th:if="${!user.items.isEmpty()}">
+            <thead>
+            <tr>
+                <th>Item</th>
+                <th>Count</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="item : ${user.items}">
+                <td th:text="${item.itemName}"></td>
+                <td><span class="badge badge-count" th:text="${item.count}"></span></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+
+<!-- Add Items Modal -->
+<div class="overlay" id="itemModal">
+    <div class="modal">
+        <h3>Add Items</h3>
+        <form th:action="@{/admin/users/{id}/items(id=${user.id})}" method="post">
+            <div class="item-row">
+                <label>🎃 Pumpkin</label>
+                <input type="number" name="item1" value="0" min="0">
+            </div>
+            <div class="item-row">
+                <label>🍌 Banana</label>
+                <input type="number" name="item2" value="0" min="0">
+            </div>
+            <div class="item-row">
+                <label>🍎 Apple</label>
+                <input type="number" name="item3" value="0" min="0">
+            </div>
+            <div class="item-row">
+                <label>🥕 Carrot</label>
+                <input type="number" name="item4" value="0" min="0">
+            </div>
+            <div class="item-row">
+                <label>💧 Water</label>
+                <input type="number" name="item5" value="0" min="0">
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-cancel"
+                        onclick="document.getElementById('itemModal').classList.remove('open')">Cancel</button>
+                <button type="submit" class="btn btn-primary">Add Items</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+</body>
+</html>

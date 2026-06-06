@@ -25,7 +25,7 @@
         table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
         thead { background: #4f46e5; color: white; }
         th, td { padding: .75rem 1rem; text-align: left; font-size: .9rem; }
-        tbody tr:hover { background: #f9fafb; }
+        tbody tr:hover { background: #f9fafb; cursor: pointer; }
         tbody tr:not(:last-child) td { border-bottom: 1px solid #e5e7eb; }
         .badge { display: inline-block; padding: .2rem .5rem; border-radius: 9999px; font-size: .78rem; background: #e0e7ff; color: #3730a3; }
         .empty { text-align: center; padding: 3rem; color: #9ca3af; }
@@ -76,7 +76,9 @@
         </tr>
         </thead>
         <tbody>
-        <tr th:each="user : ${users}">
+        <tr th:each="user : ${users}"
+            th:onclick="|location.href='@{/admin/users/{id}(id=${user.id})}'|"
+            style="cursor:pointer">
             <td th:text="${user.id}"></td>
             <td th:text="${user.userId}"></td>
             <td th:text="${user.nickname}"></td>

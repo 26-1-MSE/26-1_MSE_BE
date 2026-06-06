@@ -6,6 +6,9 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @Controller
 @RequestMapping("/admin")
 @RequiredArgsConstructor
@@ -31,6 +34,31 @@ public class AdminController {
         model.addAttribute("users", adminService.getAllUsers(keyword));
         model.addAttribute("keyword", keyword);
         return "admin/users";
+    }
+
+    // Render the user detail page showing pet stats and item inventory
+    @GetMapping("/users/{id}")
+    public String userDetail(@PathVariable Long id, Model model) {
+        model.addAttribute("user", adminService.getUserDetail(id));
+        return "admin/user-detail";
+    }
+
+    // Add items to a user via admin panel
+    @PostMapping("/users/{id}/items")
+    public String addItems(@PathVariable Long id,
+                           @RequestParam(defaultValue = "0") int item1,
+                           @RequestParam(defaultValue = "0") int item2,
+                           @RequestParam(defaultValue = "0") int item3,
+                           @RequestParam(defaultValue = "0") int item4,
+                           @RequestParam(defaultValue = "0") int item5) {
+        Map<Integer, Integer> itemCounts = new HashMap<>();
+        itemCounts.put(1, item1);
+        itemCounts.put(2, item2);
+        itemCounts.put(3, item3);
+        itemCounts.put(4, item4);
+        itemCounts.put(5, item5);
+        adminService.addItems(id, itemCounts);
+        return "redirect:/admin/users/" + id;
     }
 
     // Delete a single user and redirect back, preserving the active search keyword
