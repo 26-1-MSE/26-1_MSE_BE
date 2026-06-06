@@ -10,7 +10,9 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "items")
+@Table(name = "items", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"user_id", "item_type_id"})
+})
 public class Item {
 
     @Id
@@ -29,5 +31,9 @@ public class Item {
     private Integer count = 0; // total quantity held
 
     public void addCount(int amount) { this.count += amount; }
-    public void useOne() { this.count--; }
+
+    public void useOne() {
+        if (this.count <= 0) throw new RuntimeException("아이템 수량이 부족합니다.");
+        this.count--;
+    }
 }

@@ -9,6 +9,7 @@ import com.ajou.pettown.mail.PetMailService;
 import com.ajou.pettown.pet.Pet;
 import com.ajou.pettown.pet.PetRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,12 +34,18 @@ public class ItemServiceImpl implements ItemService {
         User user = userRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("존재하지 않는 유저입니다."));
 
-        // Create a new item row if this type doesn't exist for the user yet
-        Item item = itemRepository.findByUser_IdAndItemTypeId(user.getId(), itemTypeId)
-                .orElseGet(() -> itemRepository.save(Item.builder()
-                        .user(user)
-                        .itemTypeId(itemTypeId)
-                        .build()));
+        Item item;
+        try {
+            item = itemRepository.findByUser_IdAndItemTypeId(user.getId(), itemTypeId)
+                    .orElseGet(() -> itemRepository.save(Item.builder()
+                            .user(user)
+                            .itemTypeId(itemTypeId)
+                            .build()));
+        } catch (DataIntegrityViolationException e) {
+            // race condition: 동시 요청이 둘 다 insert 시도 → 유니크 제약 위반 시 재조회
+            item = itemRepository.findByUser_IdAndItemTypeId(user.getId(), itemTypeId)
+                    .orElseThrow(() -> new RuntimeException("아이템 조회에 실패했습니다."));
+        }
 
         item.addCount(count);
         itemRepository.save(item);
@@ -64,10 +71,6 @@ public class ItemServiceImpl implements ItemService {
 
         Item item = itemRepository.findByUser_IdAndItemTypeId(user.getId(), itemTypeId)
                 .orElseThrow(() -> new RuntimeException("보유하지 않은 아이템입니다."));
-
-        if (item.getCount() <= 0) {
-            throw new RuntimeException("아이템 수량이 부족합니다.");
-        }
 
         // itemTypeId 1-4: food, 5: water
         if (itemTypeId == 5) {
