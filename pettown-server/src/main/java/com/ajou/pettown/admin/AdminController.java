@@ -61,10 +61,17 @@ public class AdminController {
         return "redirect:/admin/users/" + id;
     }
 
-    // Reset a pet's food and water stats to 0
+    // Reset a pet's level, food, and water stats to initial values
     @PostMapping("/users/{id}/pets/{petId}/reset")
     public String resetPetStats(@PathVariable Long id, @PathVariable Long petId) {
         adminService.resetPetStats(petId);
+        return "redirect:/admin/users/" + id;
+    }
+
+    // Delete a specific pet
+    @PostMapping("/users/{id}/pets/{petId}/delete")
+    public String deletePet(@PathVariable Long id, @PathVariable Long petId) {
+        adminService.deletePet(petId);
         return "redirect:/admin/users/" + id;
     }
 

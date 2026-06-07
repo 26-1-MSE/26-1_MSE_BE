@@ -130,6 +130,15 @@ public class AdminServiceImpl implements AdminService {
 
     @Override
     @Transactional
+    public void deletePet(Long petId) {
+        petRepository.findById(petId)
+                .orElseThrow(() -> new RuntimeException("존재하지 않는 펫입니다."));
+        mailSendLogRepository.deleteByPetId(petId);
+        petRepository.deleteById(petId);
+    }
+
+    @Override
+    @Transactional
     public void addPet(Long userId, Integer petTypeId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("존재하지 않는 유저입니다."));
