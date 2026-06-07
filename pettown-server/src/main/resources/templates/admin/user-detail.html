@@ -185,7 +185,8 @@
 <div class="overlay" id="itemModal">
     <div class="modal">
         <h3>Add Items</h3>
-        <form th:action="@{/admin/users/{id}/items(id=${user.id})}" method="post">
+        <form th:action="@{/admin/users/{id}/items(id=${user.id})}" method="post"
+              onsubmit="this.querySelector('button[type=submit]').disabled = true; return true;">
             <div class="item-row">
                 <label>🎃 Pumpkin</label>
                 <input type="number" name="item1" value="0" min="0">
