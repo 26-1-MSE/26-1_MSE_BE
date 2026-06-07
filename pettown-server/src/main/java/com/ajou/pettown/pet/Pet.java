@@ -43,6 +43,7 @@ public class Pet {
 
     public void feedFood() { this.food++; }
     public void drinkWater() { this.water++; }
+    public void resetStats() { this.level = 1; this.food = 0; this.water = 0; }
 
     // Level up resets food and water to 0 for the next level's requirements
     public void levelUp() { this.level++; this.food = 0; this.water = 0; }

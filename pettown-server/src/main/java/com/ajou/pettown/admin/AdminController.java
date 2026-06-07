@@ -61,6 +61,28 @@ public class AdminController {
         return "redirect:/admin/users/" + id;
     }
 
+    // Reset a pet's food and water stats to 0
+    @PostMapping("/users/{id}/pets/{petId}/reset")
+    public String resetPetStats(@PathVariable Long id, @PathVariable Long petId) {
+        adminService.resetPetStats(petId);
+        return "redirect:/admin/users/" + id;
+    }
+
+    // Add a new pet to a user
+    @PostMapping("/users/{id}/pets")
+    public String addPet(@PathVariable Long id,
+                         @RequestParam Integer petTypeId,
+                         Model model) {
+        try {
+            adminService.addPet(id, petTypeId);
+        } catch (RuntimeException e) {
+            model.addAttribute("user", adminService.getUserDetail(id));
+            model.addAttribute("error", "펫을 추가할 수 없습니다: " + e.getMessage());
+            return "admin/user-detail";
+        }
+        return "redirect:/admin/users/" + id;
+    }
+
     // Delete a single user and redirect back, preserving the active search keyword
     @PostMapping("/users/{id}/delete")
     public String deleteUser(@PathVariable Long id,

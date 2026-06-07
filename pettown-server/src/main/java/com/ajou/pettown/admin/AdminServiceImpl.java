@@ -8,6 +8,8 @@ import com.ajou.pettown.auth.UserRepository;
 import com.ajou.pettown.item.Item;
 import com.ajou.pettown.item.ItemRepository;
 import com.ajou.pettown.mail.MailRepository;
+import com.ajou.pettown.mail.MailSendLogRepository;
+import com.ajou.pettown.pet.Pet;
 import com.ajou.pettown.pet.PetNameMapper;
 import com.ajou.pettown.pet.PetRepository;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +28,7 @@ public class AdminServiceImpl implements AdminService {
     private final PetRepository petRepository;
     private final ItemRepository itemRepository;
     private final MailRepository mailRepository;
+    private final MailSendLogRepository mailSendLogRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -111,6 +114,41 @@ public class AdminServiceImpl implements AdminService {
             }
             item.addCount(count);
             itemRepository.save(item);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void resetPetStats(Long petId) {
+        Pet pet = petRepository.findById(petId)
+                .orElseThrow(() -> new RuntimeException("존재하지 않는 펫입니다."));
+        pet.resetStats();
+        petRepository.save(pet);
+        // 해당 펫의 모든 메일 로그 삭제 — 리셋 후 ITEM/LEVEL_UP 메일이 다시 발송되도록
+        mailSendLogRepository.deleteByPetId(petId);
+    }
+
+    @Override
+    @Transactional
+    public void addPet(Long userId, Integer petTypeId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("존재하지 않는 유저입니다."));
+
+        int count = petRepository.countByUser_Id(userId);
+        if (count >= 4) {
+            throw new RuntimeException("PET_LIMIT_EXCEEDED");
+        }
+
+        Pet pet;
+        try {
+            pet = Pet.builder()
+                    .user(user)
+                    .petTypeId(petTypeId)
+                    .petIndex(count + 1)
+                    .build();
+            petRepository.save(pet);
+        } catch (DataIntegrityViolationException e) {
+            throw new RuntimeException("PET_LIMIT_EXCEEDED");
         }
     }
 
