@@ -62,7 +62,9 @@ public class ItemServiceImpl implements ItemService {
         User user = userRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("존재하지 않는 유저입니다."));
 
-        Pet pet = petRepository.findById(petId)
+        // Pessimistic write lock: prevents lost updates / duplicate level-ups when
+        // duplicate or near-simultaneous useItem requests race for the same pet
+        Pet pet = petRepository.findByIdForUpdate(petId)
                 .orElseThrow(() -> new RuntimeException("존재하지 않는 펫입니다."));
 
         if (!pet.getUser().getId().equals(user.getId())) {

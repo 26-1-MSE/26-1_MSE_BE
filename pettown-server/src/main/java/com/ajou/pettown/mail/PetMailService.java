@@ -12,6 +12,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.time.Duration;
@@ -107,6 +109,9 @@ public class PetMailService {
     }
 
     // Called when a pet levels up — at most once per pet per level
+    // REQUIRES_NEW: runs in its own transaction so a DB constraint violation here
+    // (e.g. concurrent duplicate log insert) can't mark the caller's transaction rollback-only
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void sendLevelUpMail(User user, Pet pet) {
         // triggerType = "LEVEL_UP_2" / "LEVEL_UP_3" 으로 레벨별 중복 방지
         String triggerType = "LEVEL_UP_" + pet.getLevel();
@@ -137,6 +142,7 @@ public class PetMailService {
     }
 
     // Called when an item is acquired — at most once per pet per day
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void sendItemMails(User user, Integer itemTypeId) {
         LocalDate today = LocalDate.now();
         List<Pet> pets = petRepository.findByUser_IdOrderByPetIdAsc(user.getId());
@@ -172,6 +178,7 @@ public class PetMailService {
     }
 
     // Called on first login of the day — at most once per user per day, from 1 random pet
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void sendRandomMail(User user) {
         LocalDate today = LocalDate.now();
         if (logRepository.existsByUserIdAndTriggerTypeAndSentDate(user.getId(), "RANDOM", today)) {
