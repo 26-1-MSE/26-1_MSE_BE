@@ -143,8 +143,21 @@ public class AdminServiceImpl implements AdminService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("존재하지 않는 유저입니다."));
 
-        int count = petRepository.countByUser_Id(userId);
-        if (count >= 4) {
+        List<Pet> existingPets = petRepository.findByUser_IdOrderByPetIdAsc(userId);
+        if (existingPets.size() >= 4) {
+            throw new RuntimeException("PET_LIMIT_EXCEEDED");
+        }
+
+        // 비어있는 가장 작은 petIndex(1~4)를 찾아 사용 — 중간 인덱스의 펫이 삭제된 경우에도
+        // (user_id, pet_index) 유니크 제약 충돌 없이 자리를 채울 수 있도록 함
+        java.util.Set<Integer> usedIndexes = existingPets.stream()
+                .map(Pet::getPetIndex)
+                .collect(java.util.stream.Collectors.toSet());
+        int newIndex = 1;
+        while (usedIndexes.contains(newIndex) && newIndex <= 4) {
+            newIndex++;
+        }
+        if (newIndex > 4) {
             throw new RuntimeException("PET_LIMIT_EXCEEDED");
         }
 
@@ -153,7 +166,7 @@ public class AdminServiceImpl implements AdminService {
             pet = Pet.builder()
                     .user(user)
                     .petTypeId(petTypeId)
-                    .petIndex(count + 1)
+                    .petIndex(newIndex)
                     .build();
             petRepository.save(pet);
         } catch (DataIntegrityViolationException e) {
