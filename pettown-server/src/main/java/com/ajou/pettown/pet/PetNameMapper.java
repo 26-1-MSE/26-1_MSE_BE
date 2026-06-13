@@ -9,6 +9,6 @@ public class PetNameMapper {
         if (petIndex == null || petIndex < 1 || petIndex > NAMES.length) {
             return "Unknown";
         }
-        return NAMES[petIndex - 1]; // 1-based → 0-based
+        return NAMES[petIndex - 1]; // convert 1-based index to 0-based array index
     }
 }

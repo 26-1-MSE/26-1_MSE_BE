@@ -56,7 +56,7 @@ public class AdminServiceImpl implements AdminService {
     @Transactional(readOnly = true)
     public AdminUserDetailDto getUserDetail(Long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("존재하지 않는 유저입니다."));
+                .orElseThrow(() -> new RuntimeException("User not found."));
 
         List<AdminUserDetailDto.PetDetail> pets = petRepository.findByUser_IdOrderByPetIdAsc(userId)
                 .stream()
@@ -94,7 +94,7 @@ public class AdminServiceImpl implements AdminService {
     @Transactional
     public void addItems(Long userId, Map<Integer, Integer> itemCounts) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("존재하지 않는 유저입니다."));
+                .orElseThrow(() -> new RuntimeException("User not found."));
 
         for (Map.Entry<Integer, Integer> entry : itemCounts.entrySet()) {
             int itemTypeId = entry.getKey();
@@ -110,7 +110,7 @@ public class AdminServiceImpl implements AdminService {
                                 .build()));
             } catch (DataIntegrityViolationException e) {
                 item = itemRepository.findByUser_IdAndItemTypeId(userId, itemTypeId)
-                        .orElseThrow(() -> new RuntimeException("아이템 조회 실패"));
+                        .orElseThrow(() -> new RuntimeException("Failed to retrieve item."));
             }
             item.addCount(count);
             itemRepository.save(item);
@@ -121,10 +121,10 @@ public class AdminServiceImpl implements AdminService {
     @Transactional
     public void resetPetStats(Long petId) {
         Pet pet = petRepository.findById(petId)
-                .orElseThrow(() -> new RuntimeException("존재하지 않는 펫입니다."));
+                .orElseThrow(() -> new RuntimeException("Pet not found."));
         pet.resetStats();
         petRepository.save(pet);
-        // 해당 펫의 모든 메일 로그 삭제 — 리셋 후 ITEM/LEVEL_UP 메일이 다시 발송되도록
+        // Clear this pet's mail logs so ITEM/LEVEL_UP mails can be sent again after the reset
         mailSendLogRepository.deleteByPetId(petId);
     }
 
@@ -132,7 +132,7 @@ public class AdminServiceImpl implements AdminService {
     @Transactional
     public void deletePet(Long petId) {
         petRepository.findById(petId)
-                .orElseThrow(() -> new RuntimeException("존재하지 않는 펫입니다."));
+                .orElseThrow(() -> new RuntimeException("Pet not found."));
         mailSendLogRepository.deleteByPetId(petId);
         petRepository.deleteById(petId);
     }
@@ -141,15 +141,15 @@ public class AdminServiceImpl implements AdminService {
     @Transactional
     public void addPet(Long userId, Integer petTypeId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("존재하지 않는 유저입니다."));
+                .orElseThrow(() -> new RuntimeException("User not found."));
 
         List<Pet> existingPets = petRepository.findByUser_IdOrderByPetIdAsc(userId);
         if (existingPets.size() >= 4) {
             throw new RuntimeException("PET_LIMIT_EXCEEDED");
         }
 
-        // 비어있는 가장 작은 petIndex(1~4)를 찾아 사용 — 중간 인덱스의 펫이 삭제된 경우에도
-        // (user_id, pet_index) 유니크 제약 충돌 없이 자리를 채울 수 있도록 함
+        // Find the smallest unused petIndex (1-4) so that re-adding a pet after a
+        // mid-range pet was deleted does not collide with the (user_id, pet_index) unique constraint
         java.util.Set<Integer> usedIndexes = existingPets.stream()
                 .map(Pet::getPetIndex)
                 .collect(java.util.stream.Collectors.toSet());

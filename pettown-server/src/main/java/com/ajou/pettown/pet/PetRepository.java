@@ -14,7 +14,7 @@ public interface PetRepository extends JpaRepository<Pet, Long> {
     int countByUser_Id(Long userId);
     void deleteByUser_Id(Long userId);
 
-    // Pessimistic write lock — serializes concurrent useItem requests for the same pet
+    // Pessimistic write lock, serializes concurrent useItem requests for the same pet
     // so feed/drink/levelUp updates can't be lost to a race (lost update / duplicate level-up)
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select p from Pet p where p.petId = :petId")

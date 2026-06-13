@@ -27,7 +27,7 @@ public class MailServiceImpl implements MailService {
     @Override
     public MailListResponse getMailList(String userId) {
         User user = userRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("존재하지 않는 유저입니다."));
+                .orElseThrow(() -> new RuntimeException("User not found."));
 
         // Fetch mails ordered by newest first and map to list items
         List<MailListResponse.MailItem> mails = mailRepository.findByUser_IdOrderByCreatedAtDesc(user.getId())
@@ -47,14 +47,14 @@ public class MailServiceImpl implements MailService {
     @Transactional
     public MailDetailResponse getMailDetail(String userId, Long mailId) {
         User user = userRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("존재하지 않는 유저입니다."));
+                .orElseThrow(() -> new RuntimeException("User not found."));
 
         Mail mail = mailRepository.findById(mailId)
-                .orElseThrow(() -> new RuntimeException("존재하지 않는 우편입니다."));
+                .orElseThrow(() -> new RuntimeException("Mail not found."));
 
         // Prevent users from reading mail that belongs to someone else
         if (!mail.getUser().getId().equals(user.getId())) {
-            throw new RuntimeException("본인의 우편이 아닙니다.");
+            throw new RuntimeException("This mail does not belong to you.");
         }
 
         mail.markAsRead(); // persisted via @Transactional dirty checking

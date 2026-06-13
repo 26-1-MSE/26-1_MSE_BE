@@ -32,7 +32,7 @@ public class ItemServiceImpl implements ItemService {
     @Transactional
     public ItemAcquireResponse acquireItem(String userId, Integer itemTypeId, Integer count) {
         User user = userRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("존재하지 않는 유저입니다."));
+                .orElseThrow(() -> new RuntimeException("User not found."));
 
         Item item;
         try {
@@ -42,9 +42,9 @@ public class ItemServiceImpl implements ItemService {
                             .itemTypeId(itemTypeId)
                             .build()));
         } catch (DataIntegrityViolationException e) {
-            // race condition: 동시 요청이 둘 다 insert 시도 → 유니크 제약 위반 시 재조회
+            // Race condition: concurrent requests both tried to insert, retry the lookup after the unique constraint rejects one
             item = itemRepository.findByUser_IdAndItemTypeId(user.getId(), itemTypeId)
-                    .orElseThrow(() -> new RuntimeException("아이템 조회에 실패했습니다."));
+                    .orElseThrow(() -> new RuntimeException("Failed to retrieve item."));
         }
 
         item.addCount(count);
@@ -60,19 +60,19 @@ public class ItemServiceImpl implements ItemService {
     @Transactional
     public ItemUseResponse useItem(String userId, Long petId, Integer itemTypeId) {
         User user = userRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("존재하지 않는 유저입니다."));
+                .orElseThrow(() -> new RuntimeException("User not found."));
 
         // Pessimistic write lock: prevents lost updates / duplicate level-ups when
         // duplicate or near-simultaneous useItem requests race for the same pet
         Pet pet = petRepository.findByIdForUpdate(petId)
-                .orElseThrow(() -> new RuntimeException("존재하지 않는 펫입니다."));
+                .orElseThrow(() -> new RuntimeException("Pet not found."));
 
         if (!pet.getUser().getId().equals(user.getId())) {
-            throw new RuntimeException("본인의 펫이 아닙니다.");
+            throw new RuntimeException("This pet does not belong to you.");
         }
 
         Item item = itemRepository.findByUser_IdAndItemTypeId(user.getId(), itemTypeId)
-                .orElseThrow(() -> new RuntimeException("보유하지 않은 아이템입니다."));
+                .orElseThrow(() -> new RuntimeException("You do not own this item."));
 
         // itemTypeId 1-4: food, 5: water
         if (itemTypeId == 5) {

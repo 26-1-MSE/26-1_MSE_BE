@@ -27,7 +27,7 @@ public class InventoryServiceImpl implements InventoryService {
     @Override
     public InventoryResponse getInventory(String userId) {
         User user = userRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("존재하지 않는 유저입니다."));
+                .orElseThrow(() -> new RuntimeException("User not found."));
 
         // Map pets preserving order by petId
         List<InventoryResponse.PetInfo> pets = petRepository.findByUser_IdOrderByPetIdAsc(user.getId())

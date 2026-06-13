@@ -84,7 +84,7 @@ public class AdminController {
             adminService.addPet(id, petTypeId);
         } catch (RuntimeException e) {
             model.addAttribute("user", adminService.getUserDetail(id));
-            model.addAttribute("error", "펫을 추가할 수 없습니다: " + e.getMessage());
+            model.addAttribute("error", "Cannot add pet: " + e.getMessage());
             return "admin/user-detail";
         }
         return "redirect:/admin/users/" + id;

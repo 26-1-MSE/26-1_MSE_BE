@@ -33,7 +33,7 @@ public class Item {
     public void addCount(int amount) { this.count += amount; }
 
     public void useOne() {
-        if (this.count <= 0) throw new RuntimeException("아이템 수량이 부족합니다.");
+        if (this.count <= 0) throw new RuntimeException("Insufficient item quantity.");
         this.count--;
     }
 }

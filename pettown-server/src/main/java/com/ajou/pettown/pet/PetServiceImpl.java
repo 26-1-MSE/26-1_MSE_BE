@@ -28,7 +28,7 @@ public class PetServiceImpl implements PetService {
     @Override
     public PetAcquireResponse acquirePet(String userId, Integer petTypeId) {
         User user = userRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("존재하지 않는 유저입니다."));
+                .orElseThrow(() -> new RuntimeException("User not found."));
 
         java.util.List<Pet> existingPets = petRepository.findByUser_IdOrderByPetIdAsc(user.getId());
         int count = existingPets.size();
@@ -36,8 +36,8 @@ public class PetServiceImpl implements PetService {
             throw new RuntimeException("PET_LIMIT_EXCEEDED");
         }
 
-        // 비어있는 가장 작은 petIndex(1~4)를 찾아 사용 — 중간 인덱스의 펫이 삭제된 경우에도
-        // (user_id, pet_index) 유니크 제약 충돌 없이 자리를 채울 수 있도록 함
+        // Find the smallest unused petIndex (1-4) so that re-adding a pet after a
+        // mid-range pet was deleted does not collide with the (user_id, pet_index) unique constraint
         java.util.Set<Integer> usedIndexes = existingPets.stream()
                 .map(Pet::getPetIndex)
                 .collect(java.util.stream.Collectors.toSet());
@@ -58,7 +58,7 @@ public class PetServiceImpl implements PetService {
                     .build();
             petRepository.save(pet);
         } catch (DataIntegrityViolationException e) {
-            // race condition: 동시 요청이 같은 petIndex로 insert 시도
+            // Race condition: concurrent requests tried to insert with the same petIndex
             throw new RuntimeException("PET_LIMIT_EXCEEDED");
         }
 
@@ -72,14 +72,14 @@ public class PetServiceImpl implements PetService {
     @Override
     public PetRoomResponse getPetRoom(String userId, Long petId) {
         User user = userRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("존재하지 않는 유저입니다."));
+                .orElseThrow(() -> new RuntimeException("User not found."));
 
         Pet pet = petRepository.findById(petId)
-                .orElseThrow(() -> new RuntimeException("존재하지 않는 펫입니다."));
+                .orElseThrow(() -> new RuntimeException("Pet not found."));
 
         // Ensure the pet belongs to the requesting user
         if (!pet.getUser().getId().equals(user.getId())) {
-            throw new RuntimeException("본인의 펫이 아닙니다.");
+            throw new RuntimeException("This pet does not belong to you.");
         }
 
         int level = pet.getLevel();

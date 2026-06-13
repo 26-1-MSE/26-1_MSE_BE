@@ -1,5 +1,6 @@
 package com.ajou.pettown.mail;
 
+// Generates and sends in-character pet mail messages via OpenAI, with per-trigger duplicate prevention.
 import com.ajou.pettown.auth.User;
 import com.ajou.pettown.pet.Pet;
 import com.ajou.pettown.pet.PetNameMapper;
@@ -108,12 +109,12 @@ public class PetMailService {
                 .build();
     }
 
-    // Called when a pet levels up — at most once per pet per level
+    // Called when a pet levels up, at most once per pet per level
     // REQUIRES_NEW: runs in its own transaction so a DB constraint violation here
     // (e.g. concurrent duplicate log insert) can't mark the caller's transaction rollback-only
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void sendLevelUpMail(User user, Pet pet) {
-        // triggerType = "LEVEL_UP_2" / "LEVEL_UP_3" 으로 레벨별 중복 방지
+        // triggerType is "LEVEL_UP_2" / "LEVEL_UP_3" so duplicates are prevented per level
         String triggerType = "LEVEL_UP_" + pet.getLevel();
         if (logRepository.existsByPetIdAndTriggerTypeAndSentDate(pet.getPetId(), triggerType, java.time.LocalDate.now())) {
             return;
@@ -133,15 +134,15 @@ public class PetMailService {
                             .sentDate(java.time.LocalDate.now())
                             .build());
                 } catch (org.springframework.dao.DataIntegrityViolationException ignored) {
-                    // 동시 요청으로 이미 로그 저장됨
+                    // Log already saved by a concurrent request
                 }
             }
         } catch (Exception e) {
-            log.warn("레벨업 쪽지 발송 실패 petId={}: {}", pet.getPetId(), e.getMessage());
+            log.warn("Failed to send level-up mail for petId={}: {}", pet.getPetId(), e.getMessage());
         }
     }
 
-    // Called when an item is acquired — at most once per pet per day
+    // Called when an item is acquired, at most once per pet per day
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void sendItemMails(User user, Integer itemTypeId) {
         LocalDate today = LocalDate.now();
@@ -154,7 +155,7 @@ public class PetMailService {
                 continue;
             }
             try {
-                // 로그 먼저 저장 — 실패(중복)하면 발송 자체를 건너뜀
+                // Save the log first; if it fails (duplicate), skip sending entirely
                 try {
                     logRepository.save(MailSendLog.builder()
                             .userId(user.getId())
@@ -163,7 +164,7 @@ public class PetMailService {
                             .sentDate(today)
                             .build());
                 } catch (DataIntegrityViolationException e) {
-                    continue; // 이미 발송된 것으로 간주, OpenAI 호출 없이 스킵
+                    continue; // Treat as already sent, skip without calling OpenAI
                 }
                 String petName = PetNameMapper.getName(pet.getPetIndex());
                 String petTypeName = getPetTypeName(pet.getPetTypeId());
@@ -172,12 +173,12 @@ public class PetMailService {
                     saveMail(user, petName, msg);
                 }
             } catch (Exception e) {
-                log.warn("아이템 쪽지 발송 실패 petId={}: {}", pet.getPetId(), e.getMessage());
+                log.warn("Failed to send item mail for petId={}: {}", pet.getPetId(), e.getMessage());
             }
         }
     }
 
-    // Called on first login of the day — at most once per user per day, from 1 random pet
+    // Called on first login of the day, at most once per user per day, from 1 random pet
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void sendRandomMail(User user) {
         LocalDate today = LocalDate.now();
@@ -189,7 +190,7 @@ public class PetMailService {
             return;
         }
         try {
-            // 로그 먼저 저장 — 실패(중복)하면 발송 자체를 건너뜀
+            // Save the log first; if it fails (duplicate), skip sending entirely
             try {
                 logRepository.save(MailSendLog.builder()
                         .userId(user.getId())
@@ -198,7 +199,7 @@ public class PetMailService {
                         .sentDate(today)
                         .build());
             } catch (DataIntegrityViolationException e) {
-                return; // 이미 발송된 것으로 간주
+                return; // Treat as already sent
             }
             Pet pet = pets.get(new Random().nextInt(pets.size()));
             String petName = PetNameMapper.getName(pet.getPetIndex());
@@ -209,7 +210,7 @@ public class PetMailService {
                 saveMail(user, petName, msg);
             }
         } catch (Exception e) {
-            log.warn("랜덤 쪽지 발송 실패 userId={}: {}", user.getId(), e.getMessage());
+            log.warn("Failed to send random mail for userId={}: {}", user.getId(), e.getMessage());
         }
     }
 
@@ -239,7 +240,7 @@ public class PetMailService {
         try {
             response = objectMapper.readValue(responseBody, OpenAiResponse.class);
         } catch (Exception e) {
-            log.warn("OpenAI 응답 파싱 실패: {}", e.getMessage());
+            log.warn("Failed to parse OpenAI response: {}", e.getMessage());
             return null;
         }
 
@@ -253,7 +254,7 @@ public class PetMailService {
             Map<String, String> parsed = objectMapper.readValue(content, Map.class);
             return parsed;
         } catch (Exception e) {
-            log.warn("쪽지 JSON 파싱 실패: {}", e.getMessage());
+            log.warn("Failed to parse mail JSON: {}", e.getMessage());
             return null;
         }
     }
