@@ -31,6 +31,13 @@ public class ItemServiceImpl implements ItemService {
     @Override
     @Transactional
     public ItemAcquireResponse acquireItem(String userId, Integer itemTypeId, Integer count) {
+        if (itemTypeId == null || itemTypeId < 1 || itemTypeId > 5) {
+            throw new RuntimeException("Invalid item type.");
+        }
+        if (count == null || count <= 0) {
+            throw new RuntimeException("Invalid item count.");
+        }
+
         User user = userRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("User not found."));
 
